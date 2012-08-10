@@ -600,15 +600,11 @@ package org.josht.starling.foxhole.controls
 		 */
 		public function get horizontalScrollPosition():Number
 		{
-			//jx
-//			if( isRTL )
-//				return _horizontalScrollPosition*-1;
-			
 			return this._horizontalScrollPosition;
 		}
 		
 		//jxtest: layoutDirection == rtl
-		public var isRTL:Boolean = true;
+		public var isRTL:Boolean = false;
 		
 		/**
 		 * @private
@@ -646,10 +642,9 @@ package org.josht.starling.foxhole.controls
 		 */
 		public function get maxHorizontalScrollPosition():Number
 		{
-
 			//jx
-//			if( isRTL )
-//				return _maxHorizontalScrollPosition*-1;
+			if( isRTL )
+				return this._maxHorizontalScrollPosition * -1;
 			
 			return this._maxHorizontalScrollPosition;
 		}
@@ -1603,8 +1598,6 @@ package org.josht.starling.foxhole.controls
 
 		/**
 		 * @private
-		 * 
-		 * jxTODO:
 		 */
 		protected function refreshMaxScrollPositions():void
 		{
@@ -1745,7 +1738,6 @@ package org.josht.starling.foxhole.controls
 		{
 			var offsetX:Number = 0;
 			var offsetY:Number = 0;
-			
 			if(this._maxHorizontalScrollPosition == 0)
 			{
 				if(this._horizontalAlign == HORIZONTAL_ALIGN_CENTER)
@@ -1757,7 +1749,6 @@ package org.josht.starling.foxhole.controls
 					offsetX = this.actualWidth - this._viewPort.width;
 				}
 			}
-			
 			if(this._maxVerticalScrollPosition == 0)
 			{
 				if(this._verticalAlign == VERTICAL_ALIGN_MIDDLE)
@@ -1826,7 +1817,7 @@ package org.josht.starling.foxhole.controls
 				{
 					if(this._hasElasticEdges)
 					{
-						position -= (position + this.maxHorizontalScrollPosition) * _elasticity/*(1 - this._elasticity)*/;
+						position -= (position + this._maxHorizontalScrollPosition) * _elasticity/*(1 - this._elasticity)*/;
 					}
 					else
 					{
@@ -1836,7 +1827,7 @@ package org.josht.starling.foxhole.controls
 				}
 				
 				//右邊界 - 20 是我暫訂的露底範圍
-				else if(position > 20/*this.maxHorizontalScrollPosition*/ )
+				else if(position > 20/*this._maxHorizontalScrollPosition*/ )
 				{
 					if(this._hasElasticEdges)
 					{
@@ -1864,15 +1855,15 @@ package org.josht.starling.foxhole.controls
 						position = 0;
 					}
 				}
-				else if(position > this.maxHorizontalScrollPosition )
+				else if(position > this._maxHorizontalScrollPosition )
 				{
 					if(this._hasElasticEdges)
 					{
-						position -= (position - this.maxHorizontalScrollPosition) * (1 - this._elasticity);
+						position -= (position - this._maxHorizontalScrollPosition) * (1 - this._elasticity);
 					}
 					else
 					{
-						position = this.maxHorizontalScrollPosition;
+						position = this._maxHorizontalScrollPosition;
 					}
 				}
 			}
