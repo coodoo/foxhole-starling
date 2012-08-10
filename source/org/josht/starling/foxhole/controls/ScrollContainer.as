@@ -39,16 +39,6 @@ package org.josht.starling.foxhole.controls
 	 */
 	public class ScrollContainer extends FoxholeControl
 	{
-		public var isRTL:Boolean = false;
-		
-		//jx
-		override public function addChild(child:DisplayObject):DisplayObject
-		{
-			if( "isRTL" in child )
-				child[ "isRTL" ] = isRTL;
-			
-			return super.addChild( child );
-		}
 		
 		/**
 		 * The container may scroll, if the view port is larger than the
@@ -368,11 +358,18 @@ package org.josht.starling.foxhole.controls
 			return this.viewPort.getChildAt(index);
 		}
 
+		//jx: 右到左支援
+		public var isRTL:Boolean = false;
+		
 		/**
 		 * @private
 		 */
 		override public function addChildAt(child:DisplayObject, index:int):DisplayObject
 		{
+			//jx
+			if( "isRTL" in child )
+				child[ "isRTL" ] = isRTL;
+			
 			return this.viewPort.addChildAt(child, index);
 		}
 

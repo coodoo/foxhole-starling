@@ -268,10 +268,17 @@ package org.josht.starling.foxhole.controls.supportClasses
 		protected function addedHandler(event:Event):void
 		{
 			const item:DisplayObject = DisplayObject(event.target);
+			
+			//jx: added event will be triggered when layoutViewPort was added on stage, hence needs to filter it out
 			if(item.parent != this)
 			{
 				return;
 			}
+			
+			//jx: monitor child size changes
+			if( item is FoxholeControl )
+				FoxholeControl( item ).onResize.add( child_resizeHandler );
+			
 			const index:int = this.getChildIndex(item);
 			this.items.splice(index, 0, item);
 			this.invalidate(INVALIDATION_FLAG_DATA);
