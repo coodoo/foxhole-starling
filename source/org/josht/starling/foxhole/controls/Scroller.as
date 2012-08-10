@@ -43,6 +43,8 @@ package org.josht.starling.foxhole.controls
 	import flash.system.Capabilities;
 	import flash.utils.getTimer;
 	
+	import jx.IExpandable;
+	
 	import org.josht.starling.display.ScrollRectManager;
 	import org.josht.starling.display.Sprite;
 	import org.josht.starling.foxhole.controls.supportClasses.IViewPort;
@@ -58,6 +60,7 @@ package org.josht.starling.foxhole.controls
 	
 	import starling.core.Starling;
 	import starling.display.DisplayObject;
+	import starling.display.DisplayObjectContainer;
 	import starling.events.Event;
 	import starling.events.Touch;
 	import starling.events.TouchEvent;
@@ -1297,28 +1300,29 @@ package org.josht.starling.foxhole.controls
 			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
 			const scrollBarInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SCROLL_BAR_RENDERER);
 
-			//jxtest - 實驗直書時，多加一頁，不要改 hsp
+			//jx - 直書時，每排完一頁就立即加到畫面上，並且改變 itemContainer 的寬度，但不要觸發 scroller 位移或畫面閃動
 			//結果：成功 - trick 是多加一，造成 viewPort size 改變，我只要讓 maxHSP 值正確放大即可，不要讓 hsp 值被 reset
 			//也不要 layout 進行重新排版，這樣頁面就不會跳了。
 			//注意：這段 hack 只有 RTL 時才需要；但 non-RTL 時，還是要搭配 LayoutViewPort.draw() 裏的判斷
 			var ignoreOnce:Boolean = false;
 			if( isRTL )
 			{
-				var child = _viewPortWrapper.getChildAt( 0 );	//layoutViewPort
+				var child:* = _viewPortWrapper.getChildAt( 0 );	//layoutViewPort
 				child = child.getChildAt(0);	//itemContainer
 				
-				//trace( child["exploded"] );
-				if( ("exploded" in child) && 
-					child[ "exploded" ] == true )
+				if( child is IExpandable && IExpandable(child).expanded == true )
 				{
-					child[ "exploded" ] = false;
-					trace("剛炸開，不處理 > ", child["exploded"]);
 					ignoreOnce = true;
+					IExpandable(child).expanded = false;
+					//trace("剛炸開，不處理 > ");
 				}
 				else
+				{
 					ignoreOnce = false;
+					
+				}
 			}
-			//end jx
+			//=== end jx =======================================
 			
 			if(scrollBarInvalid)
 			{
@@ -1392,7 +1396,7 @@ package org.josht.starling.foxhole.controls
 				}
 				else
 				{
-					//jx: 但 maxHSP 要幫忙更新
+					//jx: 但 maxHSP 要正確放大為最新值
 					this._maxHorizontalScrollPosition = Math.max(0, this._viewPort.width + this._verticalScrollBarWidthOffset - this.actualWidth);
 				}
 				
