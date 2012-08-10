@@ -24,7 +24,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 package org.josht.starling.foxhole.controls.renderers
 {
+	import flash.events.Event;
+	
+	import org.josht.starling.foxhole.controls.Button;
 	import org.josht.starling.foxhole.controls.List;
+	
+	import starling.events.Event;
 
 	/**
 	 * The default item renderer for List control. Supports up to three optional
@@ -43,6 +48,7 @@ package org.josht.starling.foxhole.controls.renderers
 		{
 			super();
 		}
+		
 		
 		/**
 		 * @private

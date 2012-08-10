@@ -1000,6 +1000,10 @@ package org.josht.starling.foxhole.controls.renderers
 
 		/**
 		 * @private
+		 * 
+		 * 重要：這個等於是 commitProperties() 將一堆改變的變數，一次設入 renderer 生效
+		 * 
+		 * 以 itemRenderer 來說，就是 icon, label, accessory 三者會改變，這裏也只要處理這三者即可
 		 */
 		override protected function autoSizeIfNeeded():Boolean
 		{
@@ -1100,6 +1104,7 @@ package org.josht.starling.foxhole.controls.renderers
 		{
 			if(this._owner)
 			{
+				//有 owner 代表目前使用中，不然就是備用的空白 renderer
 				this._label = this.itemToLabel(this._data);
 				this.defaultIcon = this.itemToIcon(this._data);
 				const newAccessory:DisplayObject = this.itemToAccessory(this._data);

@@ -27,14 +27,14 @@ package org.josht.starling.foxhole.controls
 	import flash.events.TimerEvent;
 	import flash.geom.Point;
 	import flash.utils.Timer;
-
+	
 	import org.josht.starling.foxhole.core.FoxholeControl;
 	import org.josht.starling.foxhole.core.PropertyProxy;
 	import org.josht.utils.math.clamp;
 	import org.josht.utils.math.roundToNearest;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.Quad;
 	import starling.events.Event;
 	import starling.events.Touch;
@@ -151,8 +151,13 @@ package org.josht.starling.foxhole.controls
 			{
 				return;
 			}
+
 			this._value = newValue;
+			//jx
+			try{
 			this.invalidate(INVALIDATION_FLAG_DATA);
+			}catch(e:Error){trace( e.getStackTrace() ) }
+			
 			if(this.liveDragging || !this.isDragging)
 			{
 				this._onChange.dispatch(this);

@@ -82,7 +82,9 @@ package org.josht.starling.foxhole.controls
 		 * @private
 		 * The guts of the List's functionality. Handles layout and selection.
 		 */
-		protected var dataViewPort:ListDataViewPort;
+		//jx
+		public var dataViewPort:ListDataViewPort;
+//		protected var dataViewPort:ListDataViewPort;
 		
 		/**
 		 * @private
@@ -712,6 +714,7 @@ package org.josht.starling.foxhole.controls
 		
 		/**
 		 * @private
+		 * 重要：這裏指定了 List 內的預設 itemRenderer
 		 */
 		private var _itemRendererType:Class = DefaultListItemRenderer;
 		
@@ -933,6 +936,7 @@ package org.josht.starling.foxhole.controls
 				this.refreshBackgroundSkin();
 			}
 
+			//List class 把所有參數都 delegate 到 ListDataViewPort 裏去
 			this.dataViewPort.isEnabled = this._isEnabled;
 			this.dataViewPort.isSelectable = this._isSelectable;
 			this.dataViewPort.selectedIndex = this._selectedIndex;

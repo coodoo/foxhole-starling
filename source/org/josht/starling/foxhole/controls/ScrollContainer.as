@@ -31,7 +31,7 @@ package org.josht.starling.foxhole.controls
 	import org.josht.starling.foxhole.layout.IVirtualLayout;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.DisplayObject;
 
 	/**
@@ -39,6 +39,17 @@ package org.josht.starling.foxhole.controls
 	 */
 	public class ScrollContainer extends FoxholeControl
 	{
+		public var isRTL:Boolean = false;
+		
+		//jx
+		override public function addChild(child:DisplayObject):DisplayObject
+		{
+			if( "isRTL" in child )
+				child[ "isRTL" ] = isRTL;
+			
+			return super.addChild( child );
+		}
+		
 		/**
 		 * The container may scroll, if the view port is larger than the
 		 * container's bounds.
@@ -60,6 +71,7 @@ package org.josht.starling.foxhole.controls
 		 */
 		public function ScrollContainer()
 		{
+			//這裏建立了宿主容器，將來所有小孩都放這裏面
 			this.viewPort = new LayoutViewPort();
 		}
 
@@ -71,7 +83,8 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * @private
 		 */
-		protected var scroller:Scroller;
+		//jx 改成 public
+		public var scroller:Scroller;
 
 		/**
 		 * @private
@@ -82,6 +95,8 @@ package org.josht.starling.foxhole.controls
 		 * @private
 		 */
 		private var _layout:ILayout;
+
+		
 
 		/**
 		 * Controls the way that the container's children are positioned and
@@ -149,6 +164,10 @@ package org.josht.starling.foxhole.controls
 		 */
 		public function get maxHorizontalScrollPosition():Number
 		{
+			//jx
+			if( scroller )
+				return this.scroller.maxHorizontalScrollPosition;
+			
 			return this._maxHorizontalScrollPosition;
 		}
 
@@ -431,6 +450,8 @@ package org.josht.starling.foxhole.controls
 			{
 				this.scroller = new Scroller();
 				this.scroller.viewPort = this.viewPort;
+				//jx
+				this.scroller.isRTL = this.isRTL;
 				this.scroller.nameList.add(this.defaultScrollerName);
 				this.scroller.onScroll.add(scroller_onScroll);
 				super.addChildAt(this.scroller, 0);

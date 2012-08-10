@@ -705,6 +705,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 			if(isTemporary || this._inactiveRenderers.length == 0)
 			{
 				var renderer:IListItemRenderer;
+				
 				if(this._itemRendererFactory != null)
 				{
 					renderer = IListItemRenderer(this._itemRendererFactory());
@@ -713,15 +714,20 @@ package org.josht.starling.foxhole.controls.supportClasses
 				{
 					renderer = new this._itemRendererType();
 				}
+				
 				renderer.onChange.add(renderer_onChange);
+				
 				const displayRenderer:DisplayObject = DisplayObject(renderer);
+				
 				displayRenderer.addEventListener(TouchEvent.TOUCH, renderer_touchHandler);
+				
 				this.addChild(displayRenderer);
 			}
 			else
 			{
 				renderer = this._inactiveRenderers.shift();
 			}
+			
 			renderer.data = item;
 			renderer.index = index;
 			renderer.owner = this._owner;

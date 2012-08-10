@@ -385,6 +385,7 @@ package org.josht.starling.foxhole.layout
 		 */
 		public function layout(items:Vector.<DisplayObject>, suggestedBounds:ViewPortBounds = null, result:LayoutBoundsResult = null):LayoutBoundsResult
 		{
+			//trace("layout");
 			const boundsX:Number = suggestedBounds ? suggestedBounds.x : 0;
 			const boundsY:Number = suggestedBounds ? suggestedBounds.y : 0;
 			const minWidth:Number = suggestedBounds ? suggestedBounds.minWidth : 0;
@@ -416,6 +417,7 @@ package org.josht.starling.foxhole.layout
 				}
 				else
 				{
+					//jx: 關鍵在這裏
 					item.x = positionX;
 					if(this._useVirtualLayout)
 					{

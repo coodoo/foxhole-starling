@@ -25,10 +25,10 @@
 package org.josht.starling.foxhole.layout
 {
 	import flash.geom.Point;
-
+	
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.DisplayObject;
 
 	/**
@@ -295,6 +295,8 @@ package org.josht.starling.foxhole.layout
 
 		/**
 		 * @private
+		 * 
+		 * jx
 		 */
 		private var _indexToItemBoundsFunction:Function;
 

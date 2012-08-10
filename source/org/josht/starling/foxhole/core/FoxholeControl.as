@@ -701,7 +701,7 @@ package org.josht.starling.foxhole.core
 				return;
 			}
 			this._isValidating = true;
-			this.draw();
+			this.draw(); //← 這支最重要，真正繪出畫面
 			for(var flag:String in this._invalidationFlags)
 			{
 				delete this._invalidationFlags[flag];
