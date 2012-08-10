@@ -86,8 +86,6 @@ package org.josht.starling.foxhole.controls
 		 */
 		private var _layout:ILayout;
 
-		
-
 		/**
 		 * Controls the way that the container's children are positioned and
 		 * sized.
@@ -359,7 +357,23 @@ package org.josht.starling.foxhole.controls
 		}
 
 		//jx: 右到左支援
-		public var isRTL:Boolean = false;
+		private var _isRTL:Boolean = false;
+		
+		public function get isRTL():Boolean
+		{
+			return _isRTL;
+		}
+		
+		public function set isRTL(value:Boolean):void
+		{
+			_isRTL = value;
+			
+			//pass down to child component
+			this.viewPort.isRTL = value;
+			
+			if( scroller )
+				scroller.isRTL = value;
+		}
 		
 		/**
 		 * @private
