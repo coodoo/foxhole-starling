@@ -286,7 +286,7 @@ package org.josht.starling.foxhole.controls
 		private var _velocityY:Number;
 		private var _previousVelocityX:Vector.<Number> = new <Number>[];
 		private var _previousVelocityY:Vector.<Number> = new <Number>[];
-		
+
 		private var _horizontalAutoScrollTween:GTween;
 		private var _verticalAutoScrollTween:GTween;
 		private var _isDraggingHorizontally:Boolean = false;
