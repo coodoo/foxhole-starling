@@ -954,6 +954,12 @@ package org.josht.starling.foxhole.controls
 
 		/**
 		 * @private
+		 * 
+		 * jx: 這種寫法就像以前在 flex 裏的 setter 設定新值後，會寫 labelFactoryChanged = true 一樣
+		 * 然後執行 invalidateProperties() 造成下一輪 commitProperties() 會重建新的 label 元件 (從 factory 裏建立)
+		 * 接著執行 invalidateDisplayList() 造成下一輪 updateDisplayList() 時會更新 label 的大小與位置
+		 * 
+		 * josh 的寫法只是改成用 flag 來標示，然後省掉 commitProperties()，並且用 draw() 取代 updateDisplayList()
 		 */
 		public function set labelFactory(value:Function):void
 		{
@@ -1771,12 +1777,16 @@ package org.josht.starling.foxhole.controls
 			const stateInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STATE);
 			const selectedInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SELECTED);
 			const textRendererInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_TEXT_RENDERER);
-
+			
+			//jx: 一般像 label 這種內部用的子元件，應該在 initialize() 時就建立，但 label 元件可能有多種型態(bitmap, textfield, tlf...)
+			//會經過 setter 隨時傳進來，因此合理的處理方式是放到 draw() 裏面，再用一個 flag 來判斷
 			if(textRendererInvalid)
 			{
+				//他刻意將每支 method 的功能切割的很單純，建立 label 的地方，不負責放入新的 text 資料，當然也不負責調整大小/位置
 				this.createLabel();
 			}
 			
+			//到這裏才放入 text 資料，但仍然不負責大小/位置
 			if(textRendererInvalid || dataInvalid)
 			{
 				this.refreshLabelData();
@@ -1818,7 +1828,9 @@ package org.josht.starling.foxhole.controls
 				{
 					FoxholeControl(this.currentIcon).validate();
 				}
-
+				
+				//到這裏才真正調整每個子元件的 大小/位置，這支下面又分了幾支 sub-method 去個別處理不同元件
+				//名稱是 positionXXX()
 				this.layoutContent();
 			}
 			

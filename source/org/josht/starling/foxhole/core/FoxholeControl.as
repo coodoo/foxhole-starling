@@ -203,6 +203,8 @@ package org.josht.starling.foxhole.core
 		 * @private
 		 * A flag that indicates that everything is invalid. If true, no other
 		 * flags will need to be tracked.
+		 * 
+		 * jx: 一個元件生命週期啟始時，這個值應該都設為 true，代表所有東西都要新建立
 		 */
 		private var _isAllInvalid:Boolean = false;
 
@@ -687,6 +689,11 @@ package org.josht.starling.foxhole.core
 				return;
 			}
 			this._invalidateCount = 0;
+			
+			//jx: 這個 queue 很重要，它會確保每個 foxhole 元件身上的 validate() method 被執行，而不用人工觸發
+			//每次當一個元件身上任何參數改變，並且設定 invalidation flag 後 - 也就是執行 invaliate( flag ) 
+			//該元件就會被加入這個 queue 裏，等下一輪 jugglor.advanceTime() 時，就會依序從 queue 裏取出 item 執行它身上的 validate()
+			//然後 validate() → draw() 就啟動了新一輪的畫面更新
 			validationQueue.addControl(this, false);
 		}
 
@@ -822,6 +829,8 @@ package org.josht.starling.foxhole.core
 		/**
 		 * Override to initialize the UI control. Should be used to create
 		 * children and set up event listeners.
+		 * 
+		 * jx: 等於 createChildren()
 		 */
 		protected function initialize():void
 		{
@@ -830,6 +839,8 @@ package org.josht.starling.foxhole.core
 
 		/**
 		 * Override to customize layout and to adjust properties of children.
+		 * 
+		 * jx: draw() 就等於 updateDisplayList()，一樣是依照 flag 條件來判斷是否真的要更新頁面
 		 */
 		protected function draw():void
 		{
@@ -840,18 +851,26 @@ package org.josht.starling.foxhole.core
 		 * @private
 		 * Initialize the control, if it hasn't been initialized yet. Then,
 		 * invalidate.
+		 * 
+		 * jx: 原理是 - 當一個元件 constructor 執行完後，就開始聽 addedToStage 事件，這就是元件生命週期的啟始點
+		 * 因此通常第一件事就是 reset 所有變數，讓它下一輪 draw() 時會全部建立新的
 		 */
 		private function addedToStageHandler(event:Event):void
 		{
+			//重要：因為此元件的小孩也會發生 addedToStage 事件，並可能往上 bubble，因此要先檢查 target 是否為自已？
+			//不然就會多次觸發(例如有100個 child components，就會觸發100次...)
 			if(event.target != this)
 			{
 				return;
 			}
+			
+			//觸發 initialize()，這等於 flex 的 createChildren()，是建立小孩的時候
 			if(!this._isInitialized)
 			{
 				this.initialize();
 				this._isInitialized = true;
 			}
+			
 			//clear any flags that may have been set while we didn't have a
 			//stage (or when we had a stage previously).
 			for(var key:String in this._invalidationFlags)
@@ -862,6 +881,10 @@ package org.josht.starling.foxhole.core
 			{
 				delete this._delayedInvalidationFlags[key];
 			}
+			
+			//人工觸發一次 invalidate()，會設定一個 all dirty flag，代表所有 flag 都髒掉了，
+			//這樣下一輪 draw() 時就會重建與重設所有參數與子元件
+			//注意：draw() 就等於 updateDisplayList()，一樣是依照 flag 條件來判斷是否真的要更新頁面
 			this._isAllInvalid = false;
 			this.invalidate(); //invalidate everything
 		}
