@@ -34,7 +34,8 @@ Source: https://github.com/fljot/TouchScrolling
 */
 package org.josht.starling.foxhole.controls
 {
-	import com.gskinner.motion.easing.*;
+	import com.gskinner.motion.easing.Exponential;
+	import com.gskinner.motion.easing.Sine;
 	
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
@@ -1296,6 +1297,29 @@ package org.josht.starling.foxhole.controls
 			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
 			const scrollBarInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SCROLL_BAR_RENDERER);
 
+			//jxtest - 實驗直書時，多加一頁，不要改 hsp
+			//結果：成功 - trick 是多加一，造成 viewPort size 改變，我只要讓 maxHSP 值正確放大即可，不要讓 hsp 值被 reset
+			//也不要 layout 進行重新排版，這樣頁面就不會跳了。
+			//注意：這段 hack 只有 RTL 時才需要；但 non-RTL 時，還是要搭配 LayoutViewPort.draw() 裏的判斷
+			var ignoreOnce:Boolean = false;
+			if( isRTL )
+			{
+				var child = _viewPortWrapper.getChildAt( 0 );	//layoutViewPort
+				child = child.getChildAt(0);	//itemContainer
+				
+				//trace( child["exploded"] );
+				if( ("exploded" in child) && 
+					child[ "exploded" ] == true )
+				{
+					child[ "exploded" ] = false;
+					trace("剛炸開，不處理 > ", child["exploded"]);
+					ignoreOnce = true;
+				}
+				else
+					ignoreOnce = false;
+			}
+			//end jx
+			
 			if(scrollBarInvalid)
 			{
 				this.createScrollBars();
@@ -1333,34 +1357,45 @@ package org.josht.starling.foxhole.controls
 
 			if(sizeInvalid || stylesInvalid || dataInvalid || scrollBarInvalid)
 			{
-				//stop animating. this is a serious change.
-				if(this._horizontalAutoScrollTween)
+				//jxtest
+				if( !ignoreOnce )
 				{
-					this._horizontalAutoScrollTween.paused = true;
-					this._horizontalAutoScrollTween = null;
+					
+					//stop animating. this is a serious change.
+					if(this._horizontalAutoScrollTween)
+					{
+						this._horizontalAutoScrollTween.paused = true;
+						this._horizontalAutoScrollTween = null;
+					}
+					if(this._verticalAutoScrollTween)
+					{
+						this._verticalAutoScrollTween.paused = true;
+						this._verticalAutoScrollTween = null;
+					}
+					this._touchPointID = -1;
+					this._velocityX = 0;
+					this._velocityY = 0;
+					this._previousVelocityX.length = 0;
+					this._previousVelocityY.length = 0;
+					this.removeEventListener(Event.ENTER_FRAME, enterFrameHandler);
+					this.stage.removeEventListener(TouchEvent.TOUCH, stage_touchHandler);
+					if(this._snapToPages)
+					{
+						//we don't check against the maximums here because the call
+						//to refresh the maximums will handle it.
+						this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
+						this._verticalScrollPosition = Math.max(0, roundToNearest(this._verticalScrollPosition, this.actualHeight));
+						this._horizontalPageIndex = Math.round(this._horizontalScrollPosition / this.actualWidth);
+						this._verticalPageIndex = Math.round(this._verticalScrollPosition / this.actualHeight);
+					}
+					this.refreshMaxScrollPositions();
 				}
-				if(this._verticalAutoScrollTween)
+				else
 				{
-					this._verticalAutoScrollTween.paused = true;
-					this._verticalAutoScrollTween = null;
+					//jx: 但 maxHSP 要幫忙更新
+					this._maxHorizontalScrollPosition = Math.max(0, this._viewPort.width + this._verticalScrollBarWidthOffset - this.actualWidth);
 				}
-				this._touchPointID = -1;
-				this._velocityX = 0;
-				this._velocityY = 0;
-				this._previousVelocityX.length = 0;
-				this._previousVelocityY.length = 0;
-				this.removeEventListener(Event.ENTER_FRAME, enterFrameHandler);
-				this.stage.removeEventListener(TouchEvent.TOUCH, stage_touchHandler);
-				if(this._snapToPages)
-				{
-					//we don't check against the maximums here because the call
-					//to refresh the maximums will handle it.
-					this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
-					this._verticalScrollPosition = Math.max(0, roundToNearest(this._verticalScrollPosition, this.actualHeight));
-					this._horizontalPageIndex = Math.round(this._horizontalScrollPosition / this.actualWidth);
-					this._verticalPageIndex = Math.round(this._verticalScrollPosition / this.actualHeight);
-				}
-				this.refreshMaxScrollPositions();
+				
 			}
 
 			if(sizeInvalid || scrollInvalid || scrollBarInvalid || dataInvalid)
@@ -1375,6 +1410,10 @@ package org.josht.starling.foxhole.controls
 			
 			if(sizeInvalid || scrollInvalid || stylesInvalid || scrollBarInvalid || dataInvalid || clippingInvalid)
 			{
+				//jx
+				if( ignoreOnce )
+					return;
+				
 				this.scrollContent();
 			}
 		}

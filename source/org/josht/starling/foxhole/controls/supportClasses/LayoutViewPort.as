@@ -25,13 +25,13 @@
 package org.josht.starling.foxhole.controls.supportClasses
 {
 	import flash.geom.Point;
-
+	
 	import org.josht.starling.foxhole.core.FoxholeControl;
 	import org.josht.starling.foxhole.layout.ILayout;
 	import org.josht.starling.foxhole.layout.IVirtualLayout;
 	import org.josht.starling.foxhole.layout.LayoutBoundsResult;
 	import org.josht.starling.foxhole.layout.ViewPortBounds;
-
+	
 	import starling.display.DisplayObject;
 	import starling.events.Event;
 
@@ -234,8 +234,13 @@ package org.josht.starling.foxhole.controls.supportClasses
 				helperBounds.minHeight = this._minVisibleHeight;
 				helperBounds.maxWidth = this._maxVisibleWidth;
 				helperBounds.maxHeight = this._maxVisibleHeight;
-				if(this._layout)
+				
+				//jx - 加一頁時不要重排，也不要改變 hsp 值，畫面就不會閃
+				if(this._layout && 
+					this.items.length > 1 )
+//				if(this._layout)
 				{
+					//這裏叫 layout 重新排，畫面就會閃
 					this._layout.layout(this.items, helperBounds, helperResult);
 					this.setSizeInternal(helperResult.contentWidth, helperResult.contentHeight, false);
 				}
@@ -254,6 +259,9 @@ package org.josht.starling.foxhole.controls.supportClasses
 				}
 			}
 		}
+		
+		//jx
+		public var isRTL:Boolean = false;
 
 		protected function layout_onLayoutChange(layout:ILayout):void
 		{
