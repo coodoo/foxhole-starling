@@ -44,6 +44,7 @@ package org.josht.starling.foxhole.controls
 	import flash.utils.getTimer;
 	
 	import jx.IExpandable;
+	import jx.util.Timing;
 	
 	import org.josht.starling.display.ScrollRectManager;
 	import org.josht.starling.display.Sprite;
@@ -1301,7 +1302,7 @@ package org.josht.starling.foxhole.controls
 			const scrollBarInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SCROLL_BAR_RENDERER);
 
 			//jx - 直書時，每排完一頁就立即加到畫面上，並且改變 itemContainer 的寬度，但不要觸發 scroller 位移或畫面閃動
-			//結果：成功 - trick 是多加一，造成 viewPort size 改變，我只要讓 maxHSP 值正確放大即可，不要讓 hsp 值被 reset
+			//結果：成功 - trick 是多加一頁時，造成 viewPort size 改變，我只要讓 maxHSP 值正確放大即可，不要讓 hsp 值被 reset
 			//也不要 layout 進行重新排版，這樣頁面就不會跳了。
 			//注意：這段 hack 只有 RTL 時才需要；但 non-RTL 時，還是要搭配 LayoutViewPort.draw() 裏的判斷
 			var ignoreOnce:Boolean = false;
@@ -2328,6 +2329,8 @@ package org.josht.starling.foxhole.controls
 			this._verticalScrollBarHideTween = null;
 		}
 		
+		private var oldTargetH:Number = -1;
+		
 		/**
 		 * @private
 		 * jx: 這裏處理手指移動的參數
@@ -2338,19 +2341,37 @@ package org.josht.starling.foxhole.controls
 			{
 				return;
 			}
-
 			//any began touch is okay here. we don't need to check all touches.
 			const touch:Touch = event.getTouch(this, TouchPhase.BEGAN);
+//			var t:Touch = event.getTouch(this);
+//			trace("touch= ", t.phase);
 			if(!touch)
 			{
 				return;
 			}
+			
 			const location:Point = touch.getLocation(this);
+
 			if(this._horizontalAutoScrollTween)
 			{
+				//jx: 如果是 snapToPages，一定要讓它跑完
+				if( _snapToPages )
+				{
+					//trace("整頁翻要停止，先跳到原本預定位置: ",_horizontalAutoScrollTween.getValue("horizontalScrollPosition") ); 						
+					var value = _horizontalAutoScrollTween.getValue("horizontalScrollPosition");
+					if( value % stage.width == 0 )
+					{
+						oldTargetH = value;	//TODO: 將來 v 捲動也要同樣的處理	
+						//trace("原本要跳整頁被暫停");
+					}
+					else
+						oldTargetH = -1;
+				}
 				this._horizontalAutoScrollTween.paused = true;
 				this._horizontalAutoScrollTween = null
 			}
+			
+			//jx
 			if(this._verticalAutoScrollTween)
 			{
 				this._verticalAutoScrollTween.paused = true;
@@ -2413,7 +2434,6 @@ package org.josht.starling.foxhole.controls
 			}
 			//jx
 			const horizontalInchesMoved:Number = Math.abs(this._currentTouchX - this._startTouchX) / Capabilities.screenDPI;
-			
 			const verticalInchesMoved:Number = Math.abs(this._currentTouchY - this._startTouchY) / Capabilities.screenDPI;
 			
 			//jx: 處理 h movement
@@ -2469,6 +2489,7 @@ package org.josht.starling.foxhole.controls
 			//jx: 重要，enterFrame 時也會一直更新 - 它直接決定了手指移動時，hsp 的值
 			if(this._isDraggingHorizontally && !this._horizontalAutoScrollTween)
 			{
+//				trace("\t進");
 				this.updateHorizontalScrollFromTouchPosition(this._currentTouchX);
 			}
 			
@@ -2511,6 +2532,9 @@ package org.josht.starling.foxhole.controls
 				const location:Point = touch.getLocation(this);
 				this._currentTouchX = location.x;
 				this._currentTouchY = location.y;
+				
+				//jx:快速連點兩下後，如果真的有 move 行為，將來鬆手後就不會繼續原本要做的整頁翻動作，因此 reset 這個值
+				oldTargetH = -1;
 			}
 			else if(touch.phase == TouchPhase.ENDED)
 			{
@@ -2521,8 +2545,15 @@ package org.josht.starling.foxhole.controls
 				var isFinishingHorizontally:Boolean = false;
 				var isFinishingVertically:Boolean = false;
 				
-				//jx: 這裏在判斷是否 到頭 或 到尾 了
+				//jx: 原本要跳整頁被第二個快速而來的點選給打斷了，現在手指鬆掉，要繼續跑完原本的行程
+				//TODO: 這裏只解決了 h 捲動時的快速連點兩下，將來要解決垂直捲動的情況 - 可加個 oldTargetV 即可
+				if(oldTargetH != -1 )
+				{
+					throwTo(oldTargetH);	//繼續用 throwTo 讓動畫流暢跑完
+					oldTargetH = -1;					
+				}
 				
+				//jx: 這裏在判斷 h 捲動 是否 到頭 或 到尾 了
 				if( isRTL )
 				{
 					if(this._horizontalScrollPosition < _maxHorizontalScrollPosition*-1 || 
@@ -2544,8 +2575,7 @@ package org.josht.starling.foxhole.controls
 					}
 					
 				}
-				//=======================================
-				
+				//=== ↑↑ ====================================
 				
 				
 				if(this._verticalScrollPosition < 0 || this._verticalScrollPosition > this._maxVerticalScrollPosition)
