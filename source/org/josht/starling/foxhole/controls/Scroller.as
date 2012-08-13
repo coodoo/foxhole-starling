@@ -2024,15 +2024,23 @@ package org.josht.starling.foxhole.controls
 				const inchesPerSecond:Number = 1000 * pixelsPerMS / Capabilities.screenDPI;
 				if(inchesPerSecond > MINIMUM_PAGE_VELOCITY)
 				{
+					//trace("回到前頁");
+					//jx 廣播事件
+					this.dispatchEventWith( "pageJump", true, {direction:"prev"} );
+					
 					var snappedPageHorizontalScrollPosition:Number = roundDownToNearest(this._horizontalScrollPosition, this.actualWidth);
 				}
 				else if(inchesPerSecond < -MINIMUM_PAGE_VELOCITY)
 				{
+					//trace("進入下頁");
+					//jx 廣播事件
+					this.dispatchEventWith( "pageJump", true, {direction:"next"} );
 					snappedPageHorizontalScrollPosition = roundUpToNearest(this._horizontalScrollPosition, this.actualWidth);
 				}
 				else
 				{
 					//非最前/後頁時，都會進到這裏
+					this.dispatchEventWith( "pageJump", true, {direction:"none"} );
 					snappedPageHorizontalScrollPosition = roundToNearest(this._horizontalScrollPosition, this.actualWidth);
 				}
 				
