@@ -2549,6 +2549,7 @@ package org.josht.starling.foxhole.controls
 				//TODO: 這裏只解決了 h 捲動時的快速連點兩下，將來要解決垂直捲動的情況 - 可加個 oldTargetV 即可
 				if(oldTargetH != -1 )
 				{
+					trace("|||||||");
 					throwTo(oldTargetH);	//繼續用 throwTo 讓動畫流暢跑完
 					oldTargetH = -1;					
 				}
