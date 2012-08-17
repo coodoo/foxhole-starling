@@ -265,7 +265,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 			}
 		}
 		
-		//jx
+		//TODO: 確認為何要傳入這個值？它似乎沒起實質作用
 		public var isRTL:Boolean = false;
 
 		protected function layout_onLayoutChange(layout:ILayout):void

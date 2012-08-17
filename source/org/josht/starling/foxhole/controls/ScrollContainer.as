@@ -373,6 +373,14 @@ package org.josht.starling.foxhole.controls
 			
 			if( scroller )
 				scroller.isRTL = value;
+			
+			//要先檢查 child item 是否有 isRTL 屬性 ← 所以 flex 用 setStyle() 其實是不錯的，至少傳遞變數到下層比較方便
+//			var i:int;
+//			var len:int = this.viewPort.numChildren;
+//			for( i=0; i<len; i++ )
+//			{
+//				viewPort.getChildAt(i).isRTL = value;
+//			}
 		}
 		
 		/**
@@ -380,7 +388,7 @@ package org.josht.starling.foxhole.controls
 		 */
 		override public function addChildAt(child:DisplayObject, index:int):DisplayObject
 		{
-			//jx
+			//jx - TODO: 如果小孩加進來了，又改變了 RTL 值，這樣的寫法會無法再傳入所有小孩
 			if( "isRTL" in child )
 				child[ "isRTL" ] = isRTL;
 			

@@ -44,7 +44,6 @@ package org.josht.starling.foxhole.controls
 	import flash.utils.getTimer;
 	
 	import jx.IExpandable;
-	import jx.util.Timing;
 	
 	import org.josht.starling.display.ScrollRectManager;
 	import org.josht.starling.display.Sprite;
@@ -61,7 +60,6 @@ package org.josht.starling.foxhole.controls
 	
 	import starling.core.Starling;
 	import starling.display.DisplayObject;
-	import starling.display.DisplayObjectContainer;
 	import starling.events.Event;
 	import starling.events.Touch;
 	import starling.events.TouchEvent;
