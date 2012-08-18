@@ -239,7 +239,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 				
 				//jx - 加一頁時不要重排，也不要改變 hsp 值，畫面就不會閃
 				//手法是檢查 itemContainer.expanded 是否為 true ←下面這個 if 條件要小心寫，不然會影響到其它正常 ScrollContainer 的運作
-				if( this._layout && 
+				if( this._layout && items.length != 0 && 
 					( !(items[0] is IExpandable) || 
 						( items[0] is IExpandable && 
 						IExpandable(items[0]).expanded == false ) )
