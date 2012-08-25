@@ -229,6 +229,8 @@ package org.josht.starling.foxhole.controls
 
 		/**
 		 * @private
+		 * 
+		 * jx: 這裏建立預設的 scrollBar，注意是用 SimpleScrollBar
 		 */
 		protected static function defaultHorizontalScrollBarFactory():IScrollBar
 		{
@@ -1650,7 +1652,8 @@ package org.josht.starling.foxhole.controls
 			{
 				this.horizontalScrollBar.minimum = 0;
 				this.horizontalScrollBar.maximum = this._maxHorizontalScrollPosition;
-				this.horizontalScrollBar.value = this._horizontalScrollPosition;
+				//jx: RTL 時，由於是 scrollbar 直接鏡射反向，因此 hsp 值一律給正的
+				this.horizontalScrollBar.value = this._horizontalScrollPosition * ( isRTL ? -1 : 1);
 				this.horizontalScrollBar.page = this.actualWidth;
 				this.horizontalScrollBar.step = this._horizontalScrollStep;
 			}
@@ -2184,6 +2187,11 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function horizontalScrollBar_onChange(scrollBar:IScrollBar):void
 		{
+			//jx - 由於 scrollbar 在 rtl 時，是直接 scaleX 變負責做反向，因此它內部的值是錯的，
+			//這裏先擋掉
+			if( isRTL )
+				return;
+			
 			this.horizontalScrollPosition = scrollBar.value;
 		}
 		

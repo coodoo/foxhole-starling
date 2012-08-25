@@ -27,14 +27,14 @@ package org.josht.starling.foxhole.controls
 	import flash.events.TimerEvent;
 	import flash.geom.Point;
 	import flash.utils.Timer;
-
+	
 	import org.josht.starling.foxhole.core.FoxholeControl;
 	import org.josht.starling.foxhole.core.PropertyProxy;
 	import org.josht.utils.math.clamp;
 	import org.josht.utils.math.roundToNearest;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.Quad;
 	import starling.events.Event;
 	import starling.events.Touch;
@@ -66,13 +66,28 @@ package org.josht.starling.foxhole.controls
 		 * The default value added to the <code>nameList</code> of the thumb.
 		 */
 		public static const DEFAULT_CHILD_NAME_THUMB:String = "foxhole-simple-scroll-bar-thumb";
-
+		
+		/**
+		 * 去跟上層 Scroller 問 isRTL 值
+		 */
+		public function get isRTL():Boolean
+		{
+			return Object(parent).isRTL;
+		}
+		
 		/**
 		 * Constructor.
 		 */
 		public function SimpleScrollBar()
 		{
 			this.addEventListener(Event.REMOVED_FROM_STAGE, removedFromStageHandler);
+			
+			//jx: RTL 時直接反向
+			if( isRTL )
+				this.scaleX *= -1;	//用這個比較好，thumb 不會浮在空中
+//			var m:Matrix = this.transformationMatrix;
+//			m.scale( -1, 1 );
+//			this.transformationMatrix = m;
 		}
 
 		/**
@@ -673,6 +688,10 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function layout():void
 		{
+			//jx: 由於 scrollbar 被反向，因此 x 要偏移一頁
+			if( isRTL )
+				x = width;
+			
 			this.track.width = this.actualWidth;
 			this.track.height = this.actualHeight;
 
