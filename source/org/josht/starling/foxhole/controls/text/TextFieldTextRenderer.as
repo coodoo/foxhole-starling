@@ -34,12 +34,11 @@ package org.josht.starling.foxhole.controls.text
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
-
+	
 	import org.josht.starling.foxhole.core.FoxholeControl;
 	import org.josht.starling.foxhole.core.ITextRenderer;
-
+	
 	import starling.core.RenderSupport;
-
 	import starling.core.Starling;
 	import starling.display.Image;
 	import starling.events.Event;
@@ -480,6 +479,9 @@ package org.josht.starling.foxhole.controls.text
 					this._textSnapshot.texture.dispose();
 					this._textSnapshot.texture = starling.textures.Texture.fromBitmapData(this._textSnapshotBitmapData, false, false, Starling.contentScaleFactor);
 					this._textSnapshot.readjustSize();
+					//jx: img 可能早先被從畫面上移除，要加回去
+					if( this._textSnapshot.stage == null )
+						addChild( this._textSnapshot );
 				}
 				else
 				{
