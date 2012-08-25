@@ -1826,7 +1826,7 @@ package org.josht.starling.foxhole.controls
 			const offset:Number = this._startTouchX - touchX;
 			var position:Number = this._startHorizontalScrollPosition + offset;
 			
-			trace("\nstartHSP: ", _startHorizontalScrollPosition, " >offset: ", offset, " >Position: ", position );
+//			trace("\nstartHSP: ", _startHorizontalScrollPosition, " >offset: ", offset, " >Position: ", position );
 			
 			//
 			leftLimit = isRTL ? maxHorizontalScrollPosition : 0;
@@ -1837,7 +1837,7 @@ package org.josht.starling.foxhole.controls
 			//if(position < 0)
 			if(position < leftLimit)
 			{
-				trace("\t\tupdate :: 左邊界");
+//				trace("\t\tupdate :: 左邊界");
 				if(this._hasElasticEdges)
 				{
 					//trace("v = ", (position - leftLimit) );
@@ -1855,7 +1855,7 @@ package org.josht.starling.foxhole.controls
 			//else if(position > this._maxHorizontalScrollPosition)
 			else if(position > rightLimit )
 			{
-				trace("\t\tupdate :: 右 邊界");
+//				trace("\t\tupdate :: 右 邊界");
 				if(this._hasElasticEdges)
 				{
 					//position -= (position - this._maxHorizontalScrollPosition) * (1 - this._elasticity);
@@ -1868,7 +1868,7 @@ package org.josht.starling.foxhole.controls
 				}
 			}
 			//jx
-			trace("\t更新 hsp = ", position );
+//			trace("\t更新 hsp = ", position );
 			this.horizontalScrollPosition = position;
 		}
 		
@@ -2507,7 +2507,7 @@ package org.josht.starling.foxhole.controls
 				if( this._horizontalScrollPosition < leftLimit || this._horizontalScrollPosition > this.rightLimit )
 				{
 					//jx: 會進入這裏，代表拖移位置已出界，例如到第一頁或最後頁還繼續拖拉
-					trace("出界 >hsp= ", _horizontalScrollPosition, " >left: ", leftLimit, " >right: ", rightLimit );
+//					trace("出界 >hsp= ", _horizontalScrollPosition, " >left: ", leftLimit, " >right: ", rightLimit );
 					isFinishingHorizontally = true;
 					this.finishScrollingHorizontally();
 				}
@@ -2524,7 +2524,7 @@ package org.josht.starling.foxhole.controls
 				//jx: 手指輕緩拖移後放開，讓捲動自然停止，或手指大力一揮，要自動翻整頁，兩者都會借助 throw() 去捲到定位 
 				if(!isFinishingHorizontally && this._isDraggingHorizontally)
 				{
-					trace("自然捲");
+//					trace("自然捲");
 					//take the average for more accuracy
 					var sum:Number = this._velocityX * 2.33;
 					var velocityCount:int = this._previousVelocityX.length;

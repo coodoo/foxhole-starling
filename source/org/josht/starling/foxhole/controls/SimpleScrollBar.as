@@ -67,11 +67,17 @@ package org.josht.starling.foxhole.controls
 		 */
 		public static const DEFAULT_CHILD_NAME_THUMB:String = "foxhole-simple-scroll-bar-thumb";
 		
+		
+		
 		/**
 		 * 去跟上層 Scroller 問 isRTL 值
 		 */
 		public function get isRTL():Boolean
 		{
+//			var value = Object(parent).isRTL;
+//			if( _isRTL != value )
+//				_isRTL = value;
+//			return _isRTL;
 			return Object(parent).isRTL;
 		}
 		
@@ -81,13 +87,6 @@ package org.josht.starling.foxhole.controls
 		public function SimpleScrollBar()
 		{
 			this.addEventListener(Event.REMOVED_FROM_STAGE, removedFromStageHandler);
-			
-			//jx: RTL 時直接反向
-			if( isRTL )
-				this.scaleX *= -1;	//用這個比較好，thumb 不會浮在空中
-//			var m:Matrix = this.transformationMatrix;
-//			m.scale( -1, 1 );
-//			this.transformationMatrix = m;
 		}
 
 		/**
@@ -596,12 +595,34 @@ package org.josht.starling.foxhole.controls
 			}
 
 			sizeInvalid = this.autoSizeIfNeeded() || sizeInvalid;
-
+			
+			if( dataInvalid )
+			{
+				//jx: RTL 時直接反向
+				//note: 雖然會多次進入下面這段，但因為 x, scaleX setter 都有 dupe check，因此不會真的執行
+				if( isRTL )
+				{
+					//jx: 由於 scrollbar 被反向，因此 x 要偏移一頁
+					x = width;
+					this.scaleX = -1;	//用這個比較好，thumb 不會浮在空中
+					//var m:Matrix = this.transformationMatrix;
+					//m.scale( -1, 1 );
+					//this.transformationMatrix = m;				
+				}
+				else
+				{
+					//還原成 LTR 狀態
+					x = 0;
+					scaleX = 1;
+				}
+			}
+			
 			if(dataInvalid || stylesInvalid || sizeInvalid)
 			{
 				this.layout();
 			}
 		}
+		
 
 		/**
 		 * @private
@@ -688,10 +709,6 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function layout():void
 		{
-			//jx: 由於 scrollbar 被反向，因此 x 要偏移一頁
-			if( isRTL )
-				x = width;
-			
 			this.track.width = this.actualWidth;
 			this.track.height = this.actualHeight;
 
