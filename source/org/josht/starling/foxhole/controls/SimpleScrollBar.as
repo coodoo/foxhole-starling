@@ -27,14 +27,14 @@ package org.josht.starling.foxhole.controls
 	import flash.events.TimerEvent;
 	import flash.geom.Point;
 	import flash.utils.Timer;
-	
+
 	import org.josht.starling.foxhole.core.FoxholeControl;
 	import org.josht.starling.foxhole.core.PropertyProxy;
 	import org.josht.utils.math.clamp;
 	import org.josht.utils.math.roundToNearest;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-	
+
 	import starling.display.Quad;
 	import starling.events.Event;
 	import starling.events.Touch;
@@ -48,6 +48,11 @@ package org.josht.starling.foxhole.controls
 	public class SimpleScrollBar extends FoxholeControl implements IScrollBar
 	{
 		/**
+		 * @private
+		 */
+		private static const HELPER_POINT:Point = new Point();
+
+		/**
 		 * The scroll bar's thumb may be dragged horizontally (on the x-axis).
 		 */
 		public static const DIRECTION_HORIZONTAL:String = "horizontal";
@@ -56,6 +61,11 @@ package org.josht.starling.foxhole.controls
 		 * The scroll bar's thumb may be dragged vertically (on the y-axis).
 		 */
 		public static const DIRECTION_VERTICAL:String = "vertical";
+
+		/**
+		 * The default value added to the <code>nameList</code> of the thumb.
+		 */
+		public static const DEFAULT_CHILD_NAME_THUMB:String = "foxhole-simple-scroll-bar-thumb";
 
 		/**
 		 * Constructor.
@@ -68,7 +78,7 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * The value added to the <code>nameList</code> of the thumb.
 		 */
-		protected var defaultThumbName:String = "foxhole-simple-scroll-bar-thumb";
+		protected var thumbName:String = DEFAULT_CHILD_NAME_THUMB;
 
 		/**
 		 * @private
@@ -151,13 +161,8 @@ package org.josht.starling.foxhole.controls
 			{
 				return;
 			}
-
 			this._value = newValue;
-			//jx
-			try{
 			this.invalidate(INVALIDATION_FLAG_DATA);
-			}catch(e:Error){trace( e.getStackTrace() ) }
-			
 			if(this.liveDragging || !this.isDragging)
 			{
 				this._onChange.dispatch(this);
@@ -547,7 +552,7 @@ package org.josht.starling.foxhole.controls
 			if(!this.thumb)
 			{
 				this.thumb = new Button();
-				this.thumb.nameList.add(this.defaultThumbName);
+				this.thumb.nameList.add(this.thumbName);
 				this.thumb.label = "";
 				this.thumb.keepDownStateOnRollOut = true;
 				this.thumb.addEventListener(TouchEvent.TOUCH, thumb_touchHandler);
@@ -847,12 +852,12 @@ package org.josht.starling.foxhole.controls
 					if(touch.phase == TouchPhase.BEGAN)
 					{
 						this._touchPointID = touch.id;
-						const location:Point = touch.getLocation(this);
-						this._touchStartX = location.x;
-						this._touchStartY = location.y;
-						this._thumbStartX = location.x;
-						this._thumbStartY = location.y;
-						this._touchValue = this.locationToValue(location);
+						touch.getLocation(this, HELPER_POINT);
+						this._touchStartX = HELPER_POINT.x;
+						this._touchStartY = HELPER_POINT.y;
+						this._thumbStartX = HELPER_POINT.x;
+						this._thumbStartY = HELPER_POINT.y;
+						this._touchValue = this.locationToValue(HELPER_POINT);
 						this.adjustPage();
 						this.startRepeatTimer(this.adjustPage);
 						return;
@@ -893,8 +898,8 @@ package org.josht.starling.foxhole.controls
 
 				if(touch.phase == TouchPhase.MOVED)
 				{
-					var location:Point = touch.getLocation(this);
-					var newValue:Number = this.locationToValue(location);
+					touch.getLocation(this, HELPER_POINT);
+					var newValue:Number = this.locationToValue(HELPER_POINT);
 					if(this._step != 0)
 					{
 						newValue = roundToNearest(newValue, this._step);
@@ -919,12 +924,12 @@ package org.josht.starling.foxhole.controls
 				{
 					if(touch.phase == TouchPhase.BEGAN)
 					{
-						location = touch.getLocation(this);
+						touch.getLocation(this, HELPER_POINT);
 						this._touchPointID = touch.id;
 						this._thumbStartX = this.thumb.x;
 						this._thumbStartY = this.thumb.y;
-						this._touchStartX = location.x;
-						this._touchStartY = location.y;
+						this._touchStartX = HELPER_POINT.x;
+						this._touchStartY = HELPER_POINT.y;
 						this.isDragging = true;
 						this._onDragStart.dispatch(this);
 						return;

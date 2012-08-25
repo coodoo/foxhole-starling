@@ -58,7 +58,7 @@ package org.josht.starling.foxhole.controls
 	import starling.events.TouchEvent;
 	import starling.events.TouchPhase;
 	import starling.textures.Texture;
-	import starling.utils.transformCoords;
+	import starling.utils.MatrixUtil;
 
 	/**
 	 * A text entry control that allows users to enter and edit a single line of
@@ -100,11 +100,6 @@ package org.josht.starling.foxhole.controls
 		 * can be used in browser-based Flash Player.
 		 */
 		protected var stageText:Object;
-
-		/**
-		 * @private
-		 */
-		protected var isRealStageText:Boolean = true;
 
 		/**
 		 * @private
@@ -527,7 +522,7 @@ package org.josht.starling.foxhole.controls
 			super.render(support, alpha);
 			helperPoint.x = helperPoint.y = 0;
 			this.getTransformationMatrix(this.stage, helperMatrix);
-			transformCoords(helperMatrix, 0, 0, helperPoint);
+			MatrixUtil.transformCoords(helperMatrix, 0, 0, helperPoint);
 			ScrollRectManager.toStageCoordinates(helperPoint, this);
 			if(helperPoint.x != this._oldGlobalX || helperPoint.y != this._oldGlobalY)
 			{
@@ -780,27 +775,20 @@ package org.josht.starling.foxhole.controls
 			{
 				if(touch)
 				{
-					if(isRealStageText)
+					touch.getLocation(this, helperPoint);
+					helperPoint.x -= this._paddingLeft;
+					helperPoint.y -= this._paddingTop;
+					if(helperPoint.x < 0)
 					{
-						this._savedSelectionIndex = -1;
+						this._savedSelectionIndex = 0;
 					}
-					else //desktop
+					else
 					{
-						const location:Point = touch.getLocation(this);
-						location.x -= this._paddingLeft;
-						location.y -= this._paddingTop;
-						if(location.x < 0)
+						this._savedSelectionIndex = this._measureTextField.getCharIndexAtPoint(helperPoint.x, helperPoint.y);
+						const bounds:Rectangle = this._measureTextField.getCharBoundaries(this._savedSelectionIndex);
+						if(bounds && (bounds.x + bounds.width - helperPoint.x) < (helperPoint.x - bounds.x))
 						{
-							this._savedSelectionIndex = 0;
-						}
-						else
-						{
-							this._savedSelectionIndex = this._measureTextField.getCharIndexAtPoint(location.x, location.y);
-							const bounds:Rectangle = this._measureTextField.getCharBoundaries(this._savedSelectionIndex);
-							if(bounds && (bounds.x + bounds.width - location.x) < (location.x - bounds.x))
-							{
-								this._savedSelectionIndex++;
-							}
+							this._savedSelectionIndex++;
 						}
 					}
 				}
@@ -838,10 +826,14 @@ package org.josht.starling.foxhole.controls
 			{
 				viewPort = new Rectangle();
 			}
+			if(!this.stageText.stage)
+			{
+				this.stageText.stage = Starling.current.nativeStage;
+			}
 
 			helperPoint.x = helperPoint.y = 0;
 			this.getTransformationMatrix(this.stage, helperMatrix);
-			transformCoords(helperMatrix, 0, 0, helperPoint);
+			MatrixUtil.transformCoords(helperMatrix, 0, 0, helperPoint);
 			ScrollRectManager.toStageCoordinates(helperPoint, this);
 			this._oldGlobalX = helperPoint.x;
 			this._oldGlobalY = helperPoint.y;
@@ -886,20 +878,16 @@ package org.josht.starling.foxhole.controls
 			}
 			catch(error:Error)
 			{
-				isRealStageText = false;
 				StageTextType = StageTextField;
 				initOptions = { multiline: false };
 			}
 			this.stageText = new StageTextType(initOptions);
 			this.stageText.visible = false;
-			this.stageText.stage = Starling.current.nativeStage;
 			this.stageText.addEventListener(Event.CHANGE, stageText_changeHandler);
 			this.stageText.addEventListener(KeyboardEvent.KEY_DOWN, stageText_keyDownHandler);
 			this.stageText.addEventListener(FocusEvent.FOCUS_IN, stageText_focusInHandler);
 			this.stageText.addEventListener(FocusEvent.FOCUS_OUT, stageText_focusOutHandler);
 			this.stageText.addEventListener(Event.COMPLETE, stageText_completeHandler);
-
-			this.refreshViewPort();
 		}
 
 		/**
@@ -931,7 +919,7 @@ package org.josht.starling.foxhole.controls
 				return;
 			}
 
-			const touches:Vector.<Touch> = event.getTouches(this.stage);
+			const touches:Vector.<Touch> = event.getTouches(this);
 			if(touches.length == 0)
 			{
 				//end hover
@@ -966,9 +954,9 @@ package org.josht.starling.foxhole.controls
 				if(touch.phase == TouchPhase.ENDED)
 				{
 					this._touchPointID = -1;
-					var location:Point = touch.getLocation(this);
-					ScrollRectManager.adjustTouchLocation(location, this);
-					var isInBounds:Boolean = this.hitTest(location, true) != null;
+					touch.getLocation(this, helperPoint);
+					ScrollRectManager.adjustTouchLocation(helperPoint, this);
+					var isInBounds:Boolean = this.hitTest(helperPoint, true) != null;
 					if(!this._stageTextHasFocus && isInBounds)
 					{
 						this.setFocusInternal(touch);

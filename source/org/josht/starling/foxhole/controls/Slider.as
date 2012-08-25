@@ -48,6 +48,11 @@ package org.josht.starling.foxhole.controls
 	public class Slider extends FoxholeControl
 	{
 		/**
+		 * @private
+		 */
+		private static const HELPER_POINT:Point = new Point();
+
+		/**
 		 * The slider's thumb may be dragged horizontally (on the x-axis).
 		 */
 		public static const DIRECTION_HORIZONTAL:String = "horizontal";
@@ -79,6 +84,23 @@ package org.josht.starling.foxhole.controls
 		 * appearance without altering the aspect ratio.
 		 */
 		public static const TRACK_LAYOUT_MODE_SCROLL:String = "scroll";
+
+		/**
+		 * The default value added to the <code>nameList</code> of the minimum
+		 * track.
+		 */
+		public static const DEFAULT_CHILD_NAME_MINIMUM_TRACK:String = "foxhole-slider-minimum-track";
+
+		/**
+		 * The default value added to the <code>nameList</code> of the maximum
+		 * track.
+		 */
+		public static const DEFAULT_CHILD_NAME_MAXIMUM_TRACK:String = "foxhole-slider-maximum-track";
+
+		/**
+		 * The default value added to the <code>nameList</code> of the thumb.
+		 */
+		public static const DEFAULT_CHILD_NAME_THUMB:String = "foxhole-slider-thumb";
 		
 		/**
 		 * Constructor.
@@ -92,17 +114,17 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * The value added to the <code>nameList</code> of the minimum track.
 		 */
-		protected var defaultMinimumTrackName:String = "foxhole-slider-minimum-track";
+		protected var minimumTrackName:String = DEFAULT_CHILD_NAME_MINIMUM_TRACK;
 
 		/**
 		 * The value added to the <code>nameList</code> of the maximum track.
 		 */
-		protected var defaultMaximumTrackName:String = "foxhole-slider-maximum-track";
+		protected var maximumTrackName:String = DEFAULT_CHILD_NAME_MAXIMUM_TRACK;
 
 		/**
 		 * The value added to the <code>nameList</code> of the thumb.
 		 */
-		protected var defaultThumbName:String = "foxhole-slider-thumb";
+		protected var thumbName:String = DEFAULT_CHILD_NAME_THUMB;
 		
 		/**
 		 * @private
@@ -643,7 +665,7 @@ package org.josht.starling.foxhole.controls
 			if(!this.minimumTrack)
 			{
 				this.minimumTrack = new Button();
-				this.minimumTrack.nameList.add(this.defaultMinimumTrackName);
+				this.minimumTrack.nameList.add(this.minimumTrackName);
 				this.minimumTrack.label = "";
 				this.minimumTrack.keepDownStateOnRollOut = true;
 				this.minimumTrack.addEventListener(TouchEvent.TOUCH, track_touchHandler);
@@ -653,7 +675,7 @@ package org.josht.starling.foxhole.controls
 			if(!this.thumb)
 			{
 				this.thumb = new Button();
-				this.thumb.nameList.add(this.defaultThumbName);
+				this.thumb.nameList.add(this.thumbName);
 				this.thumb.label = "";
 				this.thumb.keepDownStateOnRollOut = true;
 				this.thumb.addEventListener(TouchEvent.TOUCH, thumb_touchHandler);
@@ -1012,7 +1034,7 @@ package org.josht.starling.foxhole.controls
 				if(!this.maximumTrack)
 				{
 					this.maximumTrack = new Button();
-					this.maximumTrack.nameList.add(this.defaultMaximumTrackName);
+					this.maximumTrack.nameList.add(this.maximumTrackName);
 					this.maximumTrack.label = "";
 					this.maximumTrack.keepDownStateOnRollOut = true;
 					this.maximumTrack.addEventListener(TouchEvent.TOUCH, track_touchHandler);
@@ -1080,8 +1102,9 @@ package org.josht.starling.foxhole.controls
 		protected function removedFromStageHandler(event:Event):void
 		{
 			this._touchPointID = -1;
+			const wasDragging:Boolean = this.isDragging;
 			this.isDragging = false;
-			if(!this.liveDragging)
+			if(wasDragging && !this.liveDragging)
 			{
 				this._onChange.dispatch(this);
 			}
@@ -1114,8 +1137,8 @@ package org.josht.starling.foxhole.controls
 				}
 				if(touch.phase == TouchPhase.MOVED)
 				{
-					var location:Point = touch.getLocation(this);
-					this.dragTo(location);
+					touch.getLocation(this, HELPER_POINT);
+					this.dragTo(HELPER_POINT);
 				}
 				else if(touch.phase == TouchPhase.ENDED)
 				{
@@ -1135,23 +1158,23 @@ package org.josht.starling.foxhole.controls
 				{
 					if(touch.phase == TouchPhase.BEGAN)
 					{
-						location = touch.getLocation(this);
+						touch.getLocation(this, HELPER_POINT);
 						this._touchPointID = touch.id;
 						if(this._direction == DIRECTION_VERTICAL)
 						{
-							this._thumbStartX = location.x;
-							this._thumbStartY = Math.min(this.actualHeight - this.thumb.height, Math.max(0, location.y - this.thumb.height / 2));
+							this._thumbStartX = HELPER_POINT.x;
+							this._thumbStartY = Math.min(this.actualHeight - this.thumb.height, Math.max(0, HELPER_POINT.y - this.thumb.height / 2));
 						}
 						else //horizontal
 						{
-							this._thumbStartX = Math.min(this.actualWidth - this.thumb.width, Math.max(0, location.x - this.thumb.width / 2));
-							this._thumbStartY = location.y;
+							this._thumbStartX = Math.min(this.actualWidth - this.thumb.width, Math.max(0, HELPER_POINT.x - this.thumb.width / 2));
+							this._thumbStartY = HELPER_POINT.y;
 						}
-						this._touchStartX = location.x;
-						this._touchStartY = location.y;
+						this._touchStartX = HELPER_POINT.x;
+						this._touchStartY = HELPER_POINT.y;
 						this.isDragging = true;
 						this._onDragStart.dispatch(this);
-						this.dragTo(location);
+						this.dragTo(HELPER_POINT);
 						return;
 					}
 				}
@@ -1189,8 +1212,8 @@ package org.josht.starling.foxhole.controls
 				}
 				if(touch.phase == TouchPhase.MOVED)
 				{
-					var location:Point = touch.getLocation(this);
-					this.dragTo(location);
+					touch.getLocation(this, HELPER_POINT);
+					this.dragTo(HELPER_POINT);
 				}
 				else if(touch.phase == TouchPhase.ENDED)
 				{
@@ -1210,12 +1233,12 @@ package org.josht.starling.foxhole.controls
 				{
 					if(touch.phase == TouchPhase.BEGAN)
 					{
-						location = touch.getLocation(this);
+						touch.getLocation(this, HELPER_POINT);
 						this._touchPointID = touch.id;
 						this._thumbStartX = this.thumb.x;
 						this._thumbStartY = this.thumb.y;
-						this._touchStartX = location.x;
-						this._touchStartY = location.y;
+						this._touchStartX = HELPER_POINT.x;
+						this._touchStartY = HELPER_POINT.y;
 						this.isDragging = true;
 						this._onDragStart.dispatch(this);
 						return;

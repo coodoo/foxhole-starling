@@ -43,8 +43,6 @@ package org.josht.starling.foxhole.controls
 	import flash.system.Capabilities;
 	import flash.utils.getTimer;
 	
-	import jx.IExpandable;
-	
 	import org.josht.starling.display.ScrollRectManager;
 	import org.josht.starling.display.Sprite;
 	import org.josht.starling.foxhole.controls.supportClasses.IViewPort;
@@ -197,9 +195,7 @@ package org.josht.starling.foxhole.controls
 		 * @private
 		 * The friction applied every frame when the scroller is "thrown".
 		 */
-		//jx
-		private static const FRICTION:Number = 0.999;
-//		private static const FRICTION:Number = 0.998;
+		private static const FRICTION:Number = 0.998;
 
 		/**
 		 * @private
@@ -218,6 +214,18 @@ package org.josht.starling.foxhole.controls
 		 * @private
 		 */
 		private static const MAXIMUM_SAVED_VELOCITY_COUNT:int = 4;
+
+		/**
+		 * The default value added to the <code>nameList</code> of the
+		 * horizontal scroll bar.
+		 */
+		public static const DEFAULT_CHILD_NAME_HORIZONTAL_SCROLL_BAR:String = "foxhole-scroller-horizontal-scroll-bar";
+
+		/**
+		 * The default value added to the <code>nameList</code> of the vertical
+		 * scroll bar.
+		 */
+		public static const DEFAULT_CHILD_NAME_VERTICAL_SCROLL_BAR:String = "foxhole-scroller-vertical-scroll-bar";
 
 		/**
 		 * @private
@@ -254,6 +262,18 @@ package org.josht.starling.foxhole.controls
 		}
 
 		/**
+		 * The value added to the <code>nameList</code> of the horizontal scroll
+		 * bar.
+		 */
+		protected var horizontalScrollBarName:String = DEFAULT_CHILD_NAME_HORIZONTAL_SCROLL_BAR;
+
+		/**
+		 * The value added to the <code>nameList</code> of the vertical scroll
+		 * bar.
+		 */
+		protected var verticalScrollBarName:String = DEFAULT_CHILD_NAME_VERTICAL_SCROLL_BAR;
+
+		/**
 		 * The horizontal scrollbar instance. May be null.
 		 */
 		protected var horizontalScrollBar:IScrollBar;
@@ -285,11 +305,13 @@ package org.josht.starling.foxhole.controls
 		private var _previousTouchTime:int;
 		private var _previousTouchX:Number;
 		private var _previousTouchY:Number;
-		private var _velocityX:Number;
-		private var _velocityY:Number;
+		private var _velocityX:Number = 0;
+		private var _velocityY:Number = 0;
 		private var _previousVelocityX:Vector.<Number> = new <Number>[];
 		private var _previousVelocityY:Vector.<Number> = new <Number>[];
-
+		private var _lastViewPortWidth:Number = 0;
+		private var _lastViewPortHeight:Number = 0;
+		
 		private var _horizontalAutoScrollTween:GTween;
 		private var _verticalAutoScrollTween:GTween;
 		private var _isDraggingHorizontally:Boolean = false;
@@ -606,15 +628,11 @@ package org.josht.starling.foxhole.controls
 			return this._horizontalScrollPosition;
 		}
 		
-		//jxtest: layoutDirection == rtl
-		public var isRTL:Boolean = false;
-		
 		/**
 		 * @private
 		 */
 		public function set horizontalScrollPosition(value:Number):void
 		{
-			
 			if(this._horizontalScrollPosition == value)
 			{
 				return;
@@ -634,6 +652,9 @@ package org.josht.starling.foxhole.controls
 		 */
 		private var _maxHorizontalScrollPosition:Number = 0;
 		
+		//jx: List.draw() 會進來設定
+		public var isRTL:Boolean = false;
+		
 		/**
 		 * The maximum number of pixels the scroller may be scrolled
 		 * horizontally (on the x-axis). This value is automatically calculated
@@ -645,11 +666,10 @@ package org.josht.starling.foxhole.controls
 		 */
 		public function get maxHorizontalScrollPosition():Number
 		{
-			//jx
-			if( isRTL )
-				return this._maxHorizontalScrollPosition * -1;
-			
-			return this._maxHorizontalScrollPosition;
+			//jx: 將 maxHSP 值反相
+			var value:Number = _maxHorizontalScrollPosition;
+			return value * (isRTL ? -1 : 1);
+			//return this._maxHorizontalScrollPosition;
 		}
 
 		/**
@@ -1102,10 +1122,9 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * @private
 		 */
-		//jx
+		//jx-改用這個 tween 動作自然一點
 		protected var _throwEase:Function = Exponential.easeOut;
-//		protected var _throwEase:Function = Cubic.easeOut;
-		
+		//protected var _throwEase:Function = Cubic.easeOut;
 
 		/**
 		 * The easing function used for "throw" animations.
@@ -1287,8 +1306,6 @@ package org.josht.starling.foxhole.controls
 		
 		/**
 		 * @private
-		 * 
-		 * 進入點：
 		 */
 		override protected function draw():void
 		{
@@ -1299,30 +1316,6 @@ package org.josht.starling.foxhole.controls
 			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
 			const scrollBarInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SCROLL_BAR_RENDERER);
 
-			//jx - 直書時，每排完一頁就立即加到畫面上，並且改變 itemContainer 的寬度，但不要觸發 scroller 位移或畫面閃動
-			//結果：成功 - trick 是多加一頁時，造成 viewPort size 改變，我只要讓 maxHSP 值正確放大即可，不要讓 hsp 值被 reset
-			//也不要 layout 進行重新排版，這樣頁面就不會跳了。
-			//注意：這段 hack 只有 RTL 時才需要；但 non-RTL 時，還是要搭配 LayoutViewPort.draw() 裏的判斷
-			var ignoreOnce:Boolean = false;
-			if( isRTL )
-			{
-				var child:* = _viewPortWrapper.getChildAt( 0 );	//layoutViewPort
-				child = child.getChildAt(0);	//itemContainer
-				
-				if( child is IExpandable && IExpandable(child).expanded == true )
-				{
-					ignoreOnce = true;
-					IExpandable(child).expanded = false;
-					//trace("剛炸開，不處理 > ");
-				}
-				else
-				{
-					ignoreOnce = false;
-					
-				}
-			}
-			//=== end jx =======================================
-			
 			if(scrollBarInvalid)
 			{
 				this.createScrollBars();
@@ -1331,7 +1324,7 @@ package org.josht.starling.foxhole.controls
 			if(scrollBarInvalid || stylesInvalid)
 			{
 				this.refreshScrollBarStyles();
-				this.refreshInteractionModeEvents();	//重要：這裏掛上 touch 事件偵聽
+				this.refreshInteractionModeEvents();
 			}
 
 			if(this.horizontalScrollBar is FoxholeControl)
@@ -1357,48 +1350,12 @@ package org.josht.starling.foxhole.controls
 				this.refreshViewPortBoundsWithFixedScrollBars();
 			}
 			this.ignoreViewPortResizing = false;
+			this._lastViewPortWidth = viewPort.width;
+			this._lastViewPortHeight = viewPort.height;
 
 			if(sizeInvalid || stylesInvalid || dataInvalid || scrollBarInvalid)
 			{
-				//jxtest
-				if( !ignoreOnce )
-				{
-					
-					//stop animating. this is a serious change.
-					if(this._horizontalAutoScrollTween)
-					{
-						this._horizontalAutoScrollTween.paused = true;
-						this._horizontalAutoScrollTween = null;
-					}
-					if(this._verticalAutoScrollTween)
-					{
-						this._verticalAutoScrollTween.paused = true;
-						this._verticalAutoScrollTween = null;
-					}
-					this._touchPointID = -1;
-					this._velocityX = 0;
-					this._velocityY = 0;
-					this._previousVelocityX.length = 0;
-					this._previousVelocityY.length = 0;
-					this.removeEventListener(Event.ENTER_FRAME, enterFrameHandler);
-					this.stage.removeEventListener(TouchEvent.TOUCH, stage_touchHandler);
-					if(this._snapToPages)
-					{
-						//we don't check against the maximums here because the call
-						//to refresh the maximums will handle it.
-						this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
-						this._verticalScrollPosition = Math.max(0, roundToNearest(this._verticalScrollPosition, this.actualHeight));
-						this._horizontalPageIndex = Math.round(this._horizontalScrollPosition / this.actualWidth);
-						this._verticalPageIndex = Math.round(this._verticalScrollPosition / this.actualHeight);
-					}
-					this.refreshMaxScrollPositions();
-				}
-				else
-				{
-					//jx: 但 maxHSP 要正確放大為最新值
-					this._maxHorizontalScrollPosition = Math.max(0, this._viewPort.width + this._verticalScrollBarWidthOffset - this.actualWidth);
-				}
-				
+				this.refreshMaxScrollPositions();
 			}
 
 			if(sizeInvalid || scrollInvalid || scrollBarInvalid || dataInvalid)
@@ -1413,10 +1370,6 @@ package org.josht.starling.foxhole.controls
 			
 			if(sizeInvalid || scrollInvalid || stylesInvalid || scrollBarInvalid || dataInvalid || clippingInvalid)
 			{
-				//jx
-				if( ignoreOnce )
-					return;
-				
 				this.scrollContent();
 			}
 		}
@@ -1468,6 +1421,10 @@ package org.josht.starling.foxhole.controls
 				this._horizontalScrollPolicy != SCROLL_POLICY_OFF && this._horizontalScrollBarFactory != null)
 			{
 				this.horizontalScrollBar = this._horizontalScrollBarFactory();
+				if(this.horizontalScrollBar is FoxholeControl)
+				{
+					FoxholeControl(this.horizontalScrollBar).nameList.add(this.horizontalScrollBarName);
+				}
 				this.horizontalScrollBar.onChange.add(horizontalScrollBar_onChange);
 				const displayHorizontalScrollBar:DisplayObject = DisplayObject(this.horizontalScrollBar);
 				this.addChild(displayHorizontalScrollBar);
@@ -1476,6 +1433,10 @@ package org.josht.starling.foxhole.controls
 				this._verticalScrollPolicy != SCROLL_POLICY_OFF && this._verticalScrollBarFactory != null)
 			{
 				this.verticalScrollBar = this._verticalScrollBarFactory();
+				if(this.verticalScrollBar is FoxholeControl)
+				{
+					FoxholeControl(this.verticalScrollBar).nameList.add(this.verticalScrollBarName);
+				}
 				this.verticalScrollBar.onChange.add(verticalScrollBar_onChange);
 				const displayVerticalScrollBar:DisplayObject = DisplayObject(this.verticalScrollBar);
 				this.addChild(displayVerticalScrollBar);
@@ -1564,9 +1525,9 @@ package org.josht.starling.foxhole.controls
 				{
 					viewPort.visibleHeight = this.explicitHeight - horizontalScrollBarHeightOffset;
 				}
-				viewPort.minVisibleWidth = this._minWidth - verticalScrollBarWidthOffset;
+				viewPort.minVisibleWidth = Math.max(0, this._minWidth - verticalScrollBarWidthOffset);
 				viewPort.maxVisibleWidth = this._maxWidth - verticalScrollBarWidthOffset;
-				viewPort.minVisibleHeight = this._minHeight - horizontalScrollBarHeightOffset;
+				viewPort.minVisibleHeight = Math.max(0, this._minHeight - horizontalScrollBarHeightOffset);
 				viewPort.maxVisibleHeight = this._maxHeight - horizontalScrollBarHeightOffset;
 			}
 
@@ -1586,7 +1547,7 @@ package org.josht.starling.foxhole.controls
 				{
 					if(this._horizontalScrollPolicy == SCROLL_POLICY_ON ||
 						((this._viewPort.width > this.explicitWidth || this._viewPort.width > this._maxWidth) &&
-							this._verticalScrollPolicy != SCROLL_POLICY_OFF))
+							this._horizontalScrollPolicy != SCROLL_POLICY_OFF))
 					{
 						this._horizontalScrollBarHeightOffset = horizontalScrollBarHeightOffset;
 					}
@@ -1643,6 +1604,8 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function refreshMaxScrollPositions():void
 		{
+			const oldMaxHSP:Number = this._maxHorizontalScrollPosition;
+			const oldMaxVSP:Number = this._maxVerticalScrollPosition;
 			if(this._viewPort)
 			{
 				this._maxHorizontalScrollPosition = Math.max(0, this._viewPort.width + this._verticalScrollBarWidthOffset - this.actualWidth);
@@ -1653,13 +1616,27 @@ package org.josht.starling.foxhole.controls
 				this._maxHorizontalScrollPosition = 0;
 				this._maxVerticalScrollPosition = 0;
 			}
-			const oldHorizontalScrollPosition:Number = this._horizontalScrollPosition;
-			const oldVerticalScrollPosition:Number = this._verticalScrollPosition;
-			this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, 0, this._maxHorizontalScrollPosition);
-			this._verticalScrollPosition = clamp(this._verticalScrollPosition, 0, this._maxVerticalScrollPosition);
-			if(oldHorizontalScrollPosition != this._horizontalScrollPosition ||
-				oldVerticalScrollPosition != this._verticalScrollPosition)
+
+			if(this._maxHorizontalScrollPosition != oldMaxHSP || this._maxVerticalScrollPosition != oldMaxVSP)
 			{
+				if(this._touchPointID < 0 && !this._horizontalAutoScrollTween)
+				{
+					if(this._snapToPages)
+					{
+						this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
+						this._horizontalPageIndex = Math.round(this._horizontalScrollPosition / this.actualWidth);
+					}
+					this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, 0, this._maxHorizontalScrollPosition);
+				}
+				if(this._touchPointID < 0 && !this._verticalAutoScrollTween)
+				{
+					if(this._snapToPages)
+					{
+						this._verticalScrollPosition = Math.max(0, roundToNearest(this._verticalScrollPosition, this.actualHeight));
+						this._verticalPageIndex = Math.round(this._verticalScrollPosition / this.actualHeight);
+					}
+					this._verticalScrollPosition = clamp(this._verticalScrollPosition, 0, this._maxVerticalScrollPosition);
+				}
 				this._onScroll.dispatch(this);
 			}
 		}
@@ -1669,9 +1646,6 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function refreshScrollBarValues():void
 		{
-			//jx - need to fix it
-			return;
-			
 			if(this.horizontalScrollBar)
 			{
 				this.horizontalScrollBar.minimum = 0;
@@ -1733,8 +1707,6 @@ package org.josht.starling.foxhole.controls
 
 		/**
 		 * @private
-		 * 
-		 * jx: 這裏只是在擺放 v/h scrollbar 的位置，不重要
 		 */
 		protected function layout():void
 		{
@@ -1774,7 +1746,6 @@ package org.josht.starling.foxhole.controls
 		
 		/**
 		 * @private
-		 * jx: 真正處理捲動的地方
 		 */
 		protected function scrollContent():void
 		{
@@ -1802,30 +1773,19 @@ package org.josht.starling.foxhole.controls
 					offsetY = this.actualHeight - this._viewPort.height;
 				}
 			}
-			
 			if(this._clipContent)
 			{
-				//一般都會進到這裏
-				
-				//如果要裁切，scroller 內部會建一個 wrapper，wrapper 身上會設 scrollRect 來當 mask 蓋住 viewPort 內容 
 				this._viewPortWrapper.x = 0;
 				this._viewPortWrapper.y = 0;
-				
-				//建 mask
 				if(!this._viewPortWrapper.scrollRect)
 				{
 					this._viewPortWrapper.scrollRect = new Rectangle();
 				}
 				
 				const scrollRect:Rectangle = this._viewPortWrapper.scrollRect;
-				
-				//不用動
 				scrollRect.width = this.actualWidth;
 				scrollRect.height = this.actualHeight;
-				
-				//這行真正在捲動
 				scrollRect.x = this._horizontalScrollPosition - offsetX;
-				
 				scrollRect.y = this._verticalScrollPosition - offsetY;
 				this._viewPortWrapper.scrollRect = scrollRect;
 			}
@@ -1838,80 +1798,74 @@ package org.josht.starling.foxhole.controls
 				this._viewPortWrapper.x = -this._horizontalScrollPosition + offsetX;
 				this._viewPortWrapper.y = -this._verticalScrollPosition + offsetY;
 			}
-			
 		}
 		
 		/**
+		 * jx
+		 * 讓 Scroller 支持 RLT 的原理是
+		 * 1、scroller 照常捲動 viewPort 的內容物
+		 * 2、我只是將左右邊界做了修改
+		 * 		LTR: left=0, right=300
+		 * 		RTL: left=-300, right=0
+		 * 
+		 * 這樣做的好處是 scroller 本身操作 viewPort 捲動的行為並沒有變，差別只是左/右邊界值改了
+		 * 這樣的變動最小
+		 */
+		private var leftLimit:Number;
+		private var rightLimit:Number;
+		
+		/**
 		 * @private
+		 * jx
 		 */
 		protected function updateHorizontalScrollFromTouchPosition(touchX:Number):void
 		{
 			const offset:Number = this._startTouchX - touchX;
-			var position:Number = this._startHorizontalScrollPosition + offset;	//負值為滑鼠向右拖拉
+			var position:Number = this._startHorizontalScrollPosition + offset;
 			
-			//trace("\nposition: ", position, " >max: ", _maxHorizontalScrollPosition );
+			trace("\nstartHSP: ", _startHorizontalScrollPosition, " >offset: ", offset, " >Position: ", position );
 			
+			//
+			leftLimit = isRTL ? maxHorizontalScrollPosition : 0;
+			rightLimit = isRTL ? 0 : maxHorizontalScrollPosition;
+			
+			
+			//jx: 進入點？這是 minHSP 值
+			//if(position < 0)
+			if(position < leftLimit)
+			{
+				trace("\t\tupdate :: 左邊界");
+				if(this._hasElasticEdges)
+				{
+					//trace("v = ", (position - leftLimit) );
+					position += (isRTL) ? 
+										(position - leftLimit) * (1 - this._elasticity) * -1  : //jx: (1 - elasticity) 是讓減去的值越來越大，才會有拖不重得感覺	 
+										position * _elasticity * -1;	//jx: *-1 是讓它變成 -=, 也就是 position 值越來越小
+				}
+				else
+				{
+					//position = 0;
+					position = leftLimit;
+				}
+			}
+			//jx: 這是 maxHSP 值
+			//else if(position > this._maxHorizontalScrollPosition)
+			else if(position > rightLimit )
+			{
+				trace("\t\tupdate :: 右 邊界");
+				if(this._hasElasticEdges)
+				{
+					//position -= (position - this._maxHorizontalScrollPosition) * (1 - this._elasticity);
+					position -= (position - rightLimit) * (1 - this._elasticity);	//jx
+				}
+				else
+				{
+					//position = this._maxHorizontalScrollPosition;
+					position = rightLimit;	//jx
+				}
+			}
 			//jx
-			if( isRTL )
-			{
-				//左邊界
-				if(position < -_maxHorizontalScrollPosition/*0*/ )
-				{
-					if(this._hasElasticEdges)
-					{
-						position -= (position + this._maxHorizontalScrollPosition) * _elasticity/*(1 - this._elasticity)*/;
-					}
-					else
-					{
-						position = -_maxHorizontalScrollPosition;
-					}
-					//trace("\t左邊界: ", position );
-				}
-				
-				//右邊界 - 20 是我暫訂的露底範圍
-				else if(position > 20/*this._maxHorizontalScrollPosition*/ )
-				{
-					if(this._hasElasticEdges)
-					{
-						position *= this._elasticity;
-					}
-					else
-					{
-						position = 0;
-					}
-					//trace("\t右邊界: ", position );
-				}
-				
-			}
-			else
-			{
-				
-				if(position < 0 )
-				{
-					if(this._hasElasticEdges)
-					{
-						position *= this._elasticity;
-					}
-					else
-					{
-						position = 0;
-					}
-				}
-				else if(position > this._maxHorizontalScrollPosition )
-				{
-					if(this._hasElasticEdges)
-					{
-						position -= (position - this._maxHorizontalScrollPosition) * (1 - this._elasticity);
-					}
-					else
-					{
-						position = this._maxHorizontalScrollPosition;
-					}
-				}
-			}
-			
-			//trace("\t\t>>final position = ", position );
-			
+			trace("\t更新 hsp = ", position );
 			this.horizontalScrollPosition = position;
 		}
 		
@@ -1950,41 +1904,32 @@ package org.josht.starling.foxhole.controls
 		
 		/**
 		 * @private
-		 * jx: 鬆手後處理是否彈回的地方
+		 * 
+		 * jx: 當已達第一頁或最後頁時，還繼續拖拉，要彈回去
+		 * 
+		 * TODO: 沒處理 vertical 版
 		 */
 		private function finishScrollingHorizontally():void
 		{
 			var targetHorizontalScrollPosition:Number = NaN;
-			
-			//jx - test
-			if( isRTL )
+			//if(this._horizontalScrollPosition < 0)
+			if( this._horizontalScrollPosition < leftLimit )
 			{
-				//trace("鬆手後處理是否彈回的地方");
-				if(this._horizontalScrollPosition < _maxHorizontalScrollPosition*-1 )
-				{
-					//left bound
-					targetHorizontalScrollPosition = _maxHorizontalScrollPosition*-1;
-				}
-				else if(this._horizontalScrollPosition > 20)	
-				{
-					//right bound
-					targetHorizontalScrollPosition = 0;
-				}
-				
+				//jx: ok
+				if( isRTL )
+					targetHorizontalScrollPosition = leftLimit;	
+				else
+					targetHorizontalScrollPosition = 0;//第一頁
 			}
-			else
+			//else if(this._horizontalScrollPosition > this._maxHorizontalScrollPosition)
+			else if( this._horizontalScrollPosition > rightLimit )
 			{
-				//jx: original
-				if(this._horizontalScrollPosition < 0)
-				{
-					targetHorizontalScrollPosition = 0;
-				}
-				else if(this._horizontalScrollPosition > this._maxHorizontalScrollPosition)
-				{
-					targetHorizontalScrollPosition = this._maxHorizontalScrollPosition;
-				}
+				//jx: ok
+				if( isRTL )
+					targetHorizontalScrollPosition = rightLimit;
+				else
+					targetHorizontalScrollPosition = this.maxHorizontalScrollPosition;	//jx: 要用 getter, 裏面有將 x 反相
 			}
-			
 			
 			this._isDraggingHorizontally = false;
 			this.throwTo(targetHorizontalScrollPosition, NaN, this._elasticSnapDuration);
@@ -2011,47 +1956,33 @@ package org.josht.starling.foxhole.controls
 		
 		/**
 		 * @private
-		 * 
-		 * jx: 頁面中段放手後的緩停動畫
+		 * jx: 放手自然完成捲動並停止
+		 * TODO: jx - 目前只處理了 snapToPages 的情況，同時也只針對 horizontal 處理，其它 case 將來要補完
 		 */
 		protected function throwHorizontally(pixelsPerMS:Number):void
 		{
-			//trace("pixelsPerMS = ", pixelsPerMS );
-			
 			if(this._snapToPages)
 			{
+				//jx: 目前一定會進到這裏
 				const inchesPerSecond:Number = 1000 * pixelsPerMS / Capabilities.screenDPI;
 				if(inchesPerSecond > MINIMUM_PAGE_VELOCITY)
 				{
-					//trace("回到前頁");
-					//jx 廣播事件
-					this.dispatchEventWith( "pageJump", true, {direction:"prev"} );
-					
 					var snappedPageHorizontalScrollPosition:Number = roundDownToNearest(this._horizontalScrollPosition, this.actualWidth);
 				}
 				else if(inchesPerSecond < -MINIMUM_PAGE_VELOCITY)
 				{
-					//trace("進入下頁");
-					//jx 廣播事件
-					this.dispatchEventWith( "pageJump", true, {direction:"next"} );
 					snappedPageHorizontalScrollPosition = roundUpToNearest(this._horizontalScrollPosition, this.actualWidth);
 				}
 				else
 				{
-					//非最前/後頁時，都會進到這裏
-					this.dispatchEventWith( "pageJump", true, {direction:"none"} );
 					snappedPageHorizontalScrollPosition = roundToNearest(this._horizontalScrollPosition, this.actualWidth);
 				}
-				
-				//jx
-				if( isRTL )
-				{
-					snappedPageHorizontalScrollPosition = Math.max( this._maxHorizontalScrollPosition*-1, snappedPageHorizontalScrollPosition );
-				}
-				else
-				{
-					snappedPageHorizontalScrollPosition = Math.max(0, Math.min(this._maxHorizontalScrollPosition, snappedPageHorizontalScrollPosition));
-				}
+				//jx: 要用 maxHSP getter, 有反相
+				//snappedPageHorizontalScrollPosition = Math.max(0, Math.min(this._maxHorizontalScrollPosition, snappedPageHorizontalScrollPosition));
+				var min:Number = isRTL ?
+											Math.max(this.maxHorizontalScrollPosition, snappedPageHorizontalScrollPosition):
+											Math.max(0, Math.min(this.maxHorizontalScrollPosition, snappedPageHorizontalScrollPosition) );
+				snappedPageHorizontalScrollPosition = min;
 				this.throwTo(snappedPageHorizontalScrollPosition, NaN, this._pageThrowDuration);
 				this._horizontalPageIndex = Math.round(snappedPageHorizontalScrollPosition / this.actualWidth);
 				return;
@@ -2063,35 +1994,15 @@ package org.josht.starling.foxhole.controls
 				this.finishScrollingHorizontally();
 				return;
 			}
-			
-			//
 			var targetHorizontalScrollPosition:Number = this._horizontalScrollPosition + (pixelsPerMS - MINIMUM_VELOCITY) / Math.log(FRICTION);
-			
-			//jx: 可能不用了
-//			if( /*isRTL*/false )
-//			{
-//				targetHorizontalScrollPosition = this._horizontalScrollPosition - (pixelsPerMS - MINIMUM_VELOCITY) / Math.log(FRICTION);
-//			}
-//			else
-//			{
-//				targetHorizontalScrollPosition = this._horizontalScrollPosition + (pixelsPerMS - MINIMUM_VELOCITY) / Math.log(FRICTION);
-//			}
-			
-			//jx
-			if( (isRTL && (targetHorizontalScrollPosition > 20 || targetHorizontalScrollPosition < -this._maxHorizontalScrollPosition)) ||
-				( !isRTL && (targetHorizontalScrollPosition < 0 || targetHorizontalScrollPosition > this._maxHorizontalScrollPosition) ) )
-			//if(targetHorizontalScrollPosition < 0 || targetHorizontalScrollPosition > this._maxHorizontalScrollPosition)
+			if(targetHorizontalScrollPosition < 0 || targetHorizontalScrollPosition > this._maxHorizontalScrollPosition)
 			{
-				//如果已達左/右邊界
 				var duration:Number = 0;
 				targetHorizontalScrollPosition = this._horizontalScrollPosition;
 				while(Math.abs(pixelsPerMS) > MINIMUM_VELOCITY)
 				{
 					targetHorizontalScrollPosition -= pixelsPerMS;
-					
-					if( (isRTL && (targetHorizontalScrollPosition > 20 || targetHorizontalScrollPosition < -this._maxHorizontalScrollPosition)) ||
-						( !isRTL && (targetHorizontalScrollPosition < 0 || targetHorizontalScrollPosition > this._maxHorizontalScrollPosition) ) )
-					//if(targetHorizontalScrollPosition < 0 || targetHorizontalScrollPosition > this._maxHorizontalScrollPosition)
+					if(targetHorizontalScrollPosition < 0 || targetHorizontalScrollPosition > this._maxHorizontalScrollPosition)
 					{
 						if(this._hasElasticEdges)
 						{
@@ -2123,8 +2034,6 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function throwVertically(pixelsPerMS:Number):void
 		{
-			//jx
-			//trace("pixelsPerMS = ", pixelsPerMS );
 			if(this._snapToPages)
 			{
 				const inchesPerSecond:Number = 1000 * pixelsPerMS / Capabilities.screenDPI;
@@ -2185,9 +2094,6 @@ package org.josht.starling.foxhole.controls
 			{
 				duration = Math.log(MINIMUM_VELOCITY / absPixelsPerMS) / Math.log(FRICTION);
 			}
-			//jx
-//			trace("duration = ", duration );
-//			duration = 12000;
 			this.throwTo(NaN, targetVerticalScrollPosition, duration / 1000);
 		}
 
@@ -2290,6 +2196,61 @@ package org.josht.starling.foxhole.controls
 			{
 				return;
 			}
+			if(this._touchPointID >= 0)
+			{
+				if(this._velocityX > 0)
+				{
+					var difference:Number = viewPort.width - this._lastViewPortWidth;
+					//jx: rtl 時，collection.addItem() 不斷加資料，如果此時又在拖拉，會造成頁面亂跳
+					//推測: 可能是因為 RTL 時，第一頁的寬正好 300，造成多出一頁？→是因為 measure viewPort 時因為 RTL 而造成判斷多一頁？
+					if( isRTL && difference == this.width )
+					{
+						difference = 0;	//TODO: 目前 hack 是先將 diff 值給 reset 掉
+					}
+					this._startHorizontalScrollPosition += difference;
+//					trace("給值 = ", _startHorizontalScrollPosition );
+//					if( _startHorizontalScrollPosition==300)
+//						trace("");
+					this._horizontalScrollPosition += difference;
+				}
+				if(this._velocityY > 0)
+				{
+					difference = viewPort.height - this._lastViewPortHeight;
+					this._startVerticalScrollPosition += difference;
+					this._verticalScrollPosition += difference;
+				}
+			}
+			else
+			{
+				if(this._horizontalAutoScrollTween)
+				{
+					var initialScrollPosition:Number = this._horizontalAutoScrollTween.getInitValue("horizontalScrollPosition");
+					var targetScrollPosition:Number = this._horizontalAutoScrollTween.getValue("horizontalScrollPosition");
+					if(initialScrollPosition > targetScrollPosition)
+					{
+						difference = viewPort.width - this._lastViewPortWidth;
+						var tweenPosition:Number = this._horizontalAutoScrollTween.position;
+						this._horizontalScrollPosition = initialScrollPosition + difference;
+						this.throwTo(targetScrollPosition + difference, NaN,  this._horizontalAutoScrollTween.duration);
+						this._horizontalAutoScrollTween.position = tweenPosition;
+					}
+				}
+				if(this._verticalAutoScrollTween)
+				{
+					initialScrollPosition = this._verticalAutoScrollTween.getInitValue("verticalScrollPosition");
+					targetScrollPosition = this._verticalAutoScrollTween.getValue("verticalScrollPosition");
+					if(initialScrollPosition > targetScrollPosition)
+					{
+						difference = viewPort.height - this._lastViewPortHeight;
+						tweenPosition = this._verticalAutoScrollTween.position;
+						this._verticalScrollPosition = initialScrollPosition + difference;
+						this.throwTo(NaN, targetScrollPosition + difference, this._verticalAutoScrollTween.duration);
+						this._verticalAutoScrollTween.position = tweenPosition;
+					}
+				}
+			}
+			this._lastViewPortWidth = viewPort.width;
+			this._lastViewPortHeight = viewPort.height;
 			this.invalidate(INVALIDATION_FLAG_DATA);
 		}
 		
@@ -2327,11 +2288,11 @@ package org.josht.starling.foxhole.controls
 			this._verticalScrollBarHideTween = null;
 		}
 		
+		//jxadded
 		private var oldTargetH:Number = -1;
-		
+
 		/**
 		 * @private
-		 * jx: 這裏處理手指移動的參數
 		 */
 		protected function touchHandler(event:TouchEvent):void
 		{
@@ -2339,25 +2300,22 @@ package org.josht.starling.foxhole.controls
 			{
 				return;
 			}
+
 			//any began touch is okay here. we don't need to check all touches.
 			const touch:Touch = event.getTouch(this, TouchPhase.BEGAN);
-//			var t:Touch = event.getTouch(this);
-//			trace("touch= ", t.phase);
 			if(!touch)
 			{
 				return;
 			}
-			
-			const location:Point = touch.getLocation(this);
-
+			touch.getLocation(this, helperPoint);
 			if(this._horizontalAutoScrollTween)
 			{
 				//jx: 如果是 snapToPages，一定要讓它跑完
 				if( _snapToPages )
 				{
 					//trace("整頁翻要停止，先跳到原本預定位置: ",_horizontalAutoScrollTween.getValue("horizontalScrollPosition") ); 						
-					var value = _horizontalAutoScrollTween.getValue("horizontalScrollPosition");
-					if( value % stage.width == 0 )
+					var value:Number = _horizontalAutoScrollTween.getValue("horizontalScrollPosition");
+					if( value % this.width == 0 )
 					{
 						oldTargetH = value;	//TODO: 將來 v 捲動也要同樣的處理	
 						//trace("原本要跳整頁被暫停");
@@ -2368,23 +2326,20 @@ package org.josht.starling.foxhole.controls
 				this._horizontalAutoScrollTween.paused = true;
 				this._horizontalAutoScrollTween = null
 			}
-			
-			//jx
 			if(this._verticalAutoScrollTween)
 			{
 				this._verticalAutoScrollTween.paused = true;
 				this._verticalAutoScrollTween = null
 			}
 			
-			//touch began 時 reset 一堆參數，真正的移動偵測是在 enterFrameHandler 裏
 			this._touchPointID = touch.id;
 			this._velocityX = 0;
 			this._velocityY = 0;
 			this._previousVelocityX.length = 0;
 			this._previousVelocityY.length = 0;
 			this._previousTouchTime = getTimer();
-			this._previousTouchX = this._startTouchX = this._currentTouchX = location.x;
-			this._previousTouchY = this._startTouchY = this._currentTouchY = location.y;
+			this._previousTouchX = this._startTouchX = this._currentTouchX = helperPoint.x;
+			this._previousTouchY = this._startTouchY = this._currentTouchY = helperPoint.y;
 			this._startHorizontalScrollPosition = this._horizontalScrollPosition;
 			this._startVerticalScrollPosition = this._verticalScrollPosition;
 			this._isDraggingHorizontally = false;
@@ -2401,7 +2356,6 @@ package org.josht.starling.foxhole.controls
 
 		/**
 		 * @private
-		 * jx: 重要，但更重要的是下方的 stage_touchHandler()
 		 */
 		protected function enterFrameHandler(event:Event):void
 		{
@@ -2430,12 +2384,10 @@ package org.josht.starling.foxhole.controls
 				this._previousTouchX = this._currentTouchX;
 				this._previousTouchY = this._currentTouchY;
 			}
-			//jx
 			const horizontalInchesMoved:Number = Math.abs(this._currentTouchX - this._startTouchX) / Capabilities.screenDPI;
 			const verticalInchesMoved:Number = Math.abs(this._currentTouchY - this._startTouchY) / Capabilities.screenDPI;
-			
-			//jx: 處理 h movement
-			if((this._horizontalScrollPolicy == SCROLL_POLICY_ON || (this._horizontalScrollPolicy == SCROLL_POLICY_AUTO && this._maxHorizontalScrollPosition > 0)) &&
+			if((this._horizontalScrollPolicy == SCROLL_POLICY_ON ||
+				(this._horizontalScrollPolicy == SCROLL_POLICY_AUTO && (this._maxHorizontalScrollPosition > 0 || this._hasElasticEdges))) &&
 				!this._isDraggingHorizontally && horizontalInchesMoved >= MINIMUM_DRAG_DISTANCE)
 			{
 				if(this.horizontalScrollBar)
@@ -2458,11 +2410,8 @@ package org.josht.starling.foxhole.controls
 				}
 				this._isDraggingHorizontally = true;
 			}
-			
-			//jx: vertical
 			if((this._verticalScrollPolicy == SCROLL_POLICY_ON ||
-				(this._verticalScrollPolicy == SCROLL_POLICY_AUTO && this._maxVerticalScrollPosition > 0) ||
-				(this._verticalScrollPolicy == SCROLL_POLICY_AUTO && this._maxHorizontalScrollPosition == 0 && this._horizontalScrollPolicy != SCROLL_POLICY_ON)) &&
+				(this._verticalScrollPolicy == SCROLL_POLICY_AUTO && (this._maxVerticalScrollPosition > 0 || this._hasElasticEdges))) &&
 				!this._isDraggingVertically && verticalInchesMoved >= MINIMUM_DRAG_DISTANCE)
 			{
 				if(!this._isDraggingHorizontally)
@@ -2483,15 +2432,10 @@ package org.josht.starling.foxhole.controls
 				}
 				this._isDraggingVertically = true;
 			}
-			
-			//jx: 重要，enterFrame 時也會一直更新 - 它直接決定了手指移動時，hsp 的值
 			if(this._isDraggingHorizontally && !this._horizontalAutoScrollTween)
 			{
-//				trace("\t進");
 				this.updateHorizontalScrollFromTouchPosition(this._currentTouchX);
 			}
-			
-			
 			if(this._isDraggingVertically && !this._verticalAutoScrollTween)
 			{
 				this.updateVerticalScrollFromTouchPosition(this._currentTouchY);
@@ -2500,7 +2444,6 @@ package org.josht.starling.foxhole.controls
 
 		/**
 		 * @private
-		 * jx: 真正控制的地方，最重要！
 		 */
 		protected function stage_touchHandler(event:TouchEvent):void
 		{
@@ -2527,9 +2470,9 @@ package org.josht.starling.foxhole.controls
 			{
 				//we're saving these to use in the enter frame handler because
 				//that provides a longer time offset
-				const location:Point = touch.getLocation(this);
-				this._currentTouchX = location.x;
-				this._currentTouchY = location.y;
+				touch.getLocation(this, helperPoint);
+				this._currentTouchX = helperPoint.x;
+				this._currentTouchY = helperPoint.y;
 				
 				//jx:快速連點兩下後，如果真的有 move 行為，將來鬆手後就不會繼續原本要做的整頁翻動作，因此 reset 這個值
 				oldTargetH = -1;
@@ -2547,36 +2490,19 @@ package org.josht.starling.foxhole.controls
 				//TODO: 這裏只解決了 h 捲動時的快速連點兩下，將來要解決垂直捲動的情況 - 可加個 oldTargetV 即可
 				if(oldTargetH != -1 )
 				{
-					trace("|||||||");
 					throwTo(oldTargetH);	//繼續用 throwTo 讓動畫流暢跑完
 					oldTargetH = -1;					
 				}
-				
-				//jx: 這裏在判斷 h 捲動 是否 到頭 或 到尾 了
-				if( isRTL )
+
+				//jx: 對調
+//				if(this._horizontalScrollPosition < 0 || this._horizontalScrollPosition > this._maxHorizontalScrollPosition)
+				if( this._horizontalScrollPosition < leftLimit || this._horizontalScrollPosition > this.rightLimit )
 				{
-					if(this._horizontalScrollPosition < _maxHorizontalScrollPosition*-1 || 
-						this.horizontalScrollPosition > 20)
-					{
-						isFinishingHorizontally = true;
-						this.finishScrollingHorizontally();
-						//trace("in > finishScrollingHorizontally");
-					}
-					
+					//jx: 會進入這裏，代表拖移位置已出界，例如到第一頁或最後頁還繼續拖拉
+					trace("出界 >hsp= ", _horizontalScrollPosition, " >left: ", leftLimit, " >right: ", rightLimit );
+					isFinishingHorizontally = true;
+					this.finishScrollingHorizontally();
 				}
-				else
-				{
-					//原本的 code
-					if(this._horizontalScrollPosition < 0 || this._horizontalScrollPosition > this._maxHorizontalScrollPosition)
-					{
-						isFinishingHorizontally = true;
-						this.finishScrollingHorizontally();
-					}
-					
-				}
-				//=== ↑↑ ====================================
-				
-				
 				if(this._verticalScrollPosition < 0 || this._verticalScrollPosition > this._maxVerticalScrollPosition)
 				{
 					isFinishingVertically = true;
@@ -2586,9 +2512,11 @@ package org.josht.starling.foxhole.controls
 				{
 					return;
 				}
-				//jxnote: 頁面中段放手時，處理緩停止動畫
+				
+				//jx: 手指輕緩拖移後放開，讓捲動自然停止，或手指大力一揮，要自動翻整頁，兩者都會借助 throw() 去捲到定位 
 				if(!isFinishingHorizontally && this._isDraggingHorizontally)
 				{
+					trace("自然捲");
 					//take the average for more accuracy
 					var sum:Number = this._velocityX * 2.33;
 					var velocityCount:int = this._previousVelocityX.length;
@@ -2644,7 +2572,7 @@ package org.josht.starling.foxhole.controls
 
 			helperPoint.x = event.stageX;
 			helperPoint.y = event.stageY;
-			helperPoint = this.globalToLocal(helperPoint);
+			this.globalToLocal(helperPoint, helperPoint);
 			if(this.hitTest(helperPoint, true))
 			{
 				this.verticalScrollPosition = Math.min(this._maxVerticalScrollPosition, Math.max(0, this._verticalScrollPosition - event.delta * this._verticalScrollStep));
@@ -2686,9 +2614,9 @@ package org.josht.starling.foxhole.controls
 				if(touch.phase == TouchPhase.ENDED)
 				{
 					this._horizontalScrollBarTouchPointID = -1;
-					const location:Point = touch.getLocation(displayHorizontalScrollBar);
-					ScrollRectManager.adjustTouchLocation(location, displayHorizontalScrollBar);
-					const isInBounds:Boolean = displayHorizontalScrollBar.hitTest(location, true) != null;
+					touch.getLocation(displayHorizontalScrollBar, helperPoint);
+					ScrollRectManager.adjustTouchLocation(helperPoint, displayHorizontalScrollBar);
+					const isInBounds:Boolean = displayHorizontalScrollBar.hitTest(helperPoint, true) != null;
 					if(!isInBounds)
 					{
 						this.hideHorizontalScrollBar();
@@ -2752,9 +2680,9 @@ package org.josht.starling.foxhole.controls
 				if(touch.phase == TouchPhase.ENDED)
 				{
 					this._verticalScrollBarTouchPointID = -1;
-					const location:Point = touch.getLocation(displayVerticalScrollBar);
-					ScrollRectManager.adjustTouchLocation(location, displayVerticalScrollBar);
-					const isInBounds:Boolean = displayVerticalScrollBar.hitTest(location, true) != null;
+					touch.getLocation(displayVerticalScrollBar, helperPoint);
+					ScrollRectManager.adjustTouchLocation(helperPoint, displayVerticalScrollBar);
+					const isInBounds:Boolean = displayVerticalScrollBar.hitTest(helperPoint, true) != null;
 					if(!isInBounds)
 					{
 						this.hideVerticalScrollBar();

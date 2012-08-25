@@ -61,6 +61,11 @@ package org.josht.starling.foxhole.controls
 		private static const helperPoint:Point = new Point();
 
 		/**
+		 * The default value added to the <code>nameList</code> of the scroller.
+		 */
+		public static const DEFAULT_CHILD_NAME_SCROLLER:String = "foxhole-list-scroller";
+
+		/**
 		 * Constructor.
 		 */
 		public function GroupedList()
@@ -70,7 +75,7 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * The value added to the <code>nameList</code> of the scroller.
 		 */
-		protected var defaultScrollerName:String = "foxhole-list-scroller";
+		protected var scrollerName:String = DEFAULT_CHILD_NAME_SCROLLER;
 
 		/**
 		 * @private
@@ -1459,22 +1464,10 @@ package org.josht.starling.foxhole.controls
 		 */
 		override protected function initialize():void
 		{
-			if(!this._layout)
-			{
-				const layout:VerticalLayout = new VerticalLayout();
-				layout.useVirtualLayout = true;
-				layout.paddingTop = layout.paddingRight = layout.paddingBottom =
-					layout.paddingLeft = 0;
-				layout.gap = 0;
-				layout.horizontalAlign = VerticalLayout.HORIZONTAL_ALIGN_JUSTIFY;
-				layout.verticalAlign = VerticalLayout.VERTICAL_ALIGN_TOP;
-				this._layout = layout;
-			}
-
 			if(!this.scroller)
 			{
 				this.scroller = new Scroller();
-				this.scroller.nameList.add(this.defaultScrollerName);
+				this.scroller.nameList.add(this.scrollerName);
 				this.scroller.verticalScrollPolicy = Scroller.SCROLL_POLICY_AUTO;
 				this.scroller.horizontalScrollPolicy = Scroller.SCROLL_POLICY_AUTO;
 				this.scroller.onScroll.add(scroller_onScroll);
@@ -1488,6 +1481,19 @@ package org.josht.starling.foxhole.controls
 				this.dataViewPort.onChange.add(dataViewPort_onChange);
 				this.dataViewPort.onItemTouch.add(dataViewPort_onItemTouch);
 				this.scroller.viewPort = this.dataViewPort;
+			}
+
+			if(!this._layout)
+			{
+				const layout:VerticalLayout = new VerticalLayout();
+				layout.useVirtualLayout = true;
+				layout.paddingTop = layout.paddingRight = layout.paddingBottom =
+					layout.paddingLeft = 0;
+				layout.gap = 0;
+				layout.horizontalAlign = VerticalLayout.HORIZONTAL_ALIGN_JUSTIFY;
+				layout.verticalAlign = VerticalLayout.VERTICAL_ALIGN_TOP;
+				this._layout = layout;
+				this.scroller.horizontalScrollPolicy = Scroller.SCROLL_POLICY_OFF;
 			}
 		}
 
@@ -1629,7 +1635,10 @@ package org.josht.starling.foxhole.controls
 				this._scrollToGroupIndex = -1;
 				this._scrollToItemIndex = -1;
 			}
-			this.scroller.horizontalScrollStep = this.scroller.verticalScrollStep = this.dataViewPort.typicalItemHeight;
+			if(this._dataProvider && this._dataProvider.getLength() > 0)
+			{
+				this.scroller.horizontalScrollStep = this.scroller.verticalScrollStep = this.dataViewPort.typicalItemHeight;
+			}
 		}
 
 		/**

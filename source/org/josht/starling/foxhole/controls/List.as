@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 package org.josht.starling.foxhole.controls
 {
 	import flash.geom.Point;
-
+	
 	import org.josht.starling.foxhole.controls.renderers.DefaultListItemRenderer;
 	import org.josht.starling.foxhole.controls.supportClasses.ListDataViewPort;
 	import org.josht.starling.foxhole.core.FoxholeControl;
@@ -36,7 +36,7 @@ package org.josht.starling.foxhole.controls
 	import org.josht.starling.foxhole.layout.VerticalLayout;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.DisplayObject;
 	import starling.events.TouchEvent;
 
@@ -58,6 +58,11 @@ package org.josht.starling.foxhole.controls
 		 * @private
 		 */
 		private static const helperPoint:Point = new Point();
+
+		/**
+		 * The default value added to the <code>nameList</code> of the scroller.
+		 */
+		public static const DEFAULT_CHILD_NAME_SCROLLER:String = "foxhole-list-scroller";
 		
 		/**
 		 * Constructor.
@@ -70,21 +75,21 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * The value added to the <code>nameList</code> of the scroller.
 		 */
-		protected var defaultScrollerName:String = "foxhole-list-scroller";
+		protected var scrollerName:String = DEFAULT_CHILD_NAME_SCROLLER;
 
 		/**
 		 * @private
 		 * The Scroller instance.
 		 */
-		protected var scroller:Scroller;
+		//jx: 改成 public
+		public var scroller:Scroller;
 
 		/**
 		 * @private
 		 * The guts of the List's functionality. Handles layout and selection.
 		 */
-		//jx
+		//jx - protected 改成 public
 		public var dataViewPort:ListDataViewPort;
-//		protected var dataViewPort:ListDataViewPort;
 		
 		/**
 		 * @private
@@ -100,6 +105,21 @@ package org.josht.starling.foxhole.controls
 		 * @private
 		 */
 		private var _layout:ILayout;
+
+		private var _isRTL:Boolean = false;
+		
+		public function get isRTL():Boolean
+		{
+			return _isRTL;
+		}
+
+		public function set isRTL(value:Boolean):void
+		{
+			if( _isRTL == value )
+				return;
+			
+			_isRTL = value;
+		}
 
 		/**
 		 * The layout algorithm used to position and, optionally, size the
@@ -714,7 +734,6 @@ package org.josht.starling.foxhole.controls
 		
 		/**
 		 * @private
-		 * 重要：這裏指定了 List 內的預設 itemRenderer
 		 */
 		private var _itemRendererType:Class = DefaultListItemRenderer;
 		
@@ -884,22 +903,10 @@ package org.josht.starling.foxhole.controls
 		 */
 		override protected function initialize():void
 		{
-			if(!this._layout)
-			{
-				const layout:VerticalLayout = new VerticalLayout();
-				layout.useVirtualLayout = true;
-				layout.paddingTop = layout.paddingRight = layout.paddingBottom =
-					layout.paddingLeft = 0;
-				layout.gap = 0;
-				layout.horizontalAlign = VerticalLayout.HORIZONTAL_ALIGN_JUSTIFY;
-				layout.verticalAlign = VerticalLayout.VERTICAL_ALIGN_TOP;
-				this._layout = layout;
-			}
-
 			if(!this.scroller)
 			{
 				this.scroller = new Scroller();
-				this.scroller.nameList.add(this.defaultScrollerName);
+				this.scroller.nameList.add(this.scrollerName);
 				this.scroller.verticalScrollPolicy = Scroller.SCROLL_POLICY_AUTO;
 				this.scroller.horizontalScrollPolicy = Scroller.SCROLL_POLICY_AUTO;
 				this.scroller.onScroll.add(scroller_onScroll);
@@ -913,6 +920,19 @@ package org.josht.starling.foxhole.controls
 				this.dataViewPort.onChange.add(dataViewPort_onChange);
 				this.dataViewPort.onItemTouch.add(dataViewPort_onItemTouch);
 				this.scroller.viewPort = this.dataViewPort;
+			}
+
+			if(!this._layout)
+			{
+				const layout:VerticalLayout = new VerticalLayout();
+				layout.useVirtualLayout = true;
+				layout.paddingTop = layout.paddingRight = layout.paddingBottom =
+					layout.paddingLeft = 0;
+				layout.gap = 0;
+				layout.horizontalAlign = VerticalLayout.HORIZONTAL_ALIGN_JUSTIFY;
+				layout.verticalAlign = VerticalLayout.VERTICAL_ALIGN_TOP;
+				this._layout = layout;
+				this.scroller.horizontalScrollPolicy = Scroller.SCROLL_POLICY_OFF;
 			}
 		}
 		
@@ -935,8 +955,8 @@ package org.josht.starling.foxhole.controls
 			{
 				this.refreshBackgroundSkin();
 			}
-
-			//List class 把所有參數都 delegate 到 ListDataViewPort 裏去
+			
+			//jxnote: ↓ 這裏將早先設定的屬性都 delegate 進到子元件身上
 			this.dataViewPort.isEnabled = this._isEnabled;
 			this.dataViewPort.isSelectable = this._isSelectable;
 			this.dataViewPort.selectedIndex = this._selectedIndex;
@@ -950,6 +970,7 @@ package org.josht.starling.foxhole.controls
 			this.dataViewPort.horizontalScrollPosition = this._horizontalScrollPosition;
 			this.dataViewPort.verticalScrollPosition = this._verticalScrollPosition;
 			
+			this.scroller.isRTL = this.isRTL;		//jx: 將 isRTL 值傳入
 			this.scroller.isEnabled = this._isEnabled;
 			this.scroller.x = this._paddingLeft;
 			this.scroller.y = this._paddingTop;
@@ -1033,7 +1054,10 @@ package org.josht.starling.foxhole.controls
 				}
 				this._scrollToIndex = -1;
 			}
-			this.scroller.horizontalScrollStep = this.scroller.verticalScrollStep = this.dataViewPort.typicalItemHeight;
+			if(this._dataProvider && this._dataProvider.length > 0)
+			{
+				this.scroller.horizontalScrollStep = this.scroller.verticalScrollStep = this.dataViewPort.typicalItemHeight;
+			}
 		}
 
 		/**
@@ -1140,8 +1164,8 @@ package org.josht.starling.foxhole.controls
 			this._verticalScrollPosition = this.scroller.verticalScrollPosition;
 			this.invalidate(INVALIDATION_FLAG_SCROLL);
 			this._onScroll.dispatch(this);
+		this.name
 		}
-		
 		/**
 		 * @private
 		 */

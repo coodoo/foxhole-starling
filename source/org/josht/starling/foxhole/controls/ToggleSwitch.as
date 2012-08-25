@@ -49,6 +49,11 @@ package org.josht.starling.foxhole.controls
 	{
 		/**
 		 * @private
+		 */
+		private static const HELPER_POINT:Point = new Point();
+
+		/**
+		 * @private
 		 * The minimum physical distance (in inches) that a touch must move
 		 * before the scroller starts scrolling.
 		 */
@@ -90,6 +95,31 @@ package org.josht.starling.foxhole.controls
 		public static const TRACK_LAYOUT_MODE_SCROLL:String = "scroll";
 
 		/**
+		 * The default value added to the <code>nameList</code> of the off label.
+		 */
+		public static const DEFAULT_CHILD_NAME_OFF_LABEL:String = "foxhole-toggle-switch-off-label";
+
+		/**
+		 * The default value added to the <code>nameList</code> of the on label.
+		 */
+		public static const DEFAULT_CHILD_NAME_ON_LABEL:String = "foxhole-toggle-switch-on-label";
+
+		/**
+		 * The default value added to the <code>nameList</code> of the off track.
+		 */
+		public static const DEFAULT_CHILD_NAME_OFF_TRACK:String = "foxhole-toggle-switch-off-track";
+
+		/**
+		 * The default value added to the <code>nameList</code> of the on track.
+		 */
+		public static const DEFAULT_CHILD_NAME_ON_TRACK:String = "foxhole-toggle-switch-on-track";
+
+		/**
+		 * The default value added to the <code>nameList</code> of the thumb.
+		 */
+		public static const DEFAULT_CHILD_NAME_THUMB:String = "foxhole-toggle-switch-thumb";
+
+		/**
 		 * Constructor.
 		 */
 		public function ToggleSwitch()
@@ -102,27 +132,27 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * The value added to the <code>nameList</code> of the off label.
 		 */
-		protected var defaultOnLabelName:String = "foxhole-toggle-switch-off-label";
+		protected var onLabelName:String = DEFAULT_CHILD_NAME_ON_LABEL;
 
 		/**
 		 * The value added to the <code>nameList</code> of the on label.
 		 */
-		protected var defaultOffLabelName:String = "foxhole-toggle-switch-on-label";
+		protected var offLabelName:String = DEFAULT_CHILD_NAME_OFF_LABEL;
 
 		/**
 		 * The value added to the <code>nameList</code> of the on track.
 		 */
-		protected var defaultOnTrackName:String = "foxhole-toggle-switch-on-track";
+		protected var onTrackName:String = DEFAULT_CHILD_NAME_ON_TRACK;
 
 		/**
 		 * The value added to the <code>nameList</code> of the off track.
 		 */
-		protected var defaultOffTrackName:String = "foxhole-toggle-switch-off-track";
+		protected var offTrackName:String = DEFAULT_CHILD_NAME_OFF_TRACK;
 
 		/**
 		 * The value added to the <code>nameList</code> of the thumb.
 		 */
-		protected var defaultThumbName:String = "foxhole-toggle-switch-thumb";
+		protected var thumbName:String = DEFAULT_CHILD_NAME_THUMB;
 
 		/**
 		 * @private
@@ -831,7 +861,7 @@ package org.josht.starling.foxhole.controls
 			if(!this.onTrack)
 			{
 				this.onTrack = new Button();
-				this.onTrack.nameList.add(this.defaultOnTrackName);
+				this.onTrack.nameList.add(this.onTrackName);
 				this.onTrack.scrollRect = new Rectangle();
 				this.onTrack.label = "";
 				this.onTrack.keepDownStateOnRollOut = true;
@@ -841,7 +871,7 @@ package org.josht.starling.foxhole.controls
 			if(!this.thumb)
 			{
 				this.thumb = new Button();
-				this.thumb.nameList.add(this.defaultThumbName);
+				this.thumb.nameList.add(this.thumbName);
 				this.thumb.label = "";
 				this.thumb.keepDownStateOnRollOut = true;
 				this.thumb.addEventListener(TouchEvent.TOUCH, thumb_touchHandler);
@@ -973,13 +1003,13 @@ package org.josht.starling.foxhole.controls
 			const factory:Function = this._labelFactory != null ? this._labelFactory : FoxholeControl.defaultTextRendererFactory;
 			this.offLabelControl = factory();
 			var foxholeTextRenderer:FoxholeControl = FoxholeControl(this.offLabelControl);
-			foxholeTextRenderer.nameList.add(this.defaultOffLabelName);
+			foxholeTextRenderer.nameList.add(this.offLabelName);
 			foxholeTextRenderer.scrollRect = new Rectangle();
 			this.addChildAt(foxholeTextRenderer, index);
 
 			this.onLabelControl = factory();
 			foxholeTextRenderer = FoxholeControl(this.onLabelControl);
-			foxholeTextRenderer.nameList.add(this.defaultOnLabelName);
+			foxholeTextRenderer.nameList.add(this.onLabelName);
 			foxholeTextRenderer.scrollRect = new Rectangle();
 			this.addChildAt(foxholeTextRenderer, index);
 		}
@@ -1314,7 +1344,7 @@ package org.josht.starling.foxhole.controls
 				if(!this.offTrack)
 				{
 					this.offTrack = new Button();
-					this.offTrack.nameList.add(this.defaultOffTrackName);
+					this.offTrack.nameList.add(this.offTrackName);
 					this.offTrack.label = "";
 					this.offTrack.keepDownStateOnRollOut = true;
 					this.addChildAt(this.offTrack, 1);
@@ -1403,8 +1433,8 @@ package org.josht.starling.foxhole.controls
 			}
 
 			this._touchPointID = -1;
-			const location:Point = touch.getLocation(this);
-			if(this.hitTest(location, true))
+			touch.getLocation(this, HELPER_POINT);
+			if(this.hitTest(HELPER_POINT, true))
 			{
 				this.isSelected = !this._isSelected;
 				this._isSelectionChangedByUser = true;
@@ -1440,11 +1470,11 @@ package org.josht.starling.foxhole.controls
 				{
 					return;
 				}
-				var location:Point = touch.getLocation(this);
+				touch.getLocation(this, HELPER_POINT);
 				const trackScrollableWidth:Number = this.actualWidth - this._paddingLeft - this._paddingRight - this.thumb.width;
 				if(touch.phase == TouchPhase.MOVED)
 				{
-					const xOffset:Number = location.x - this._touchStartX;
+					const xOffset:Number = HELPER_POINT.x - this._touchStartX;
 					const xPosition:Number = Math.min(Math.max(this._paddingLeft, this._thumbStartX + xOffset), this._paddingLeft + trackScrollableWidth);
 					this.thumb.x = xPosition;
 					this.layout();
@@ -1452,7 +1482,7 @@ package org.josht.starling.foxhole.controls
 				}
 				else if(touch.phase == TouchPhase.ENDED)
 				{
-					const inchesMoved:Number = Math.abs(location.x - this._touchStartX) / Capabilities.screenDPI;
+					const inchesMoved:Number = Math.abs(HELPER_POINT.x - this._touchStartX) / Capabilities.screenDPI;
 					if(inchesMoved > MINIMUM_DRAG_DISTANCE)
 					{
 						this._touchPointID = -1;
@@ -1469,10 +1499,10 @@ package org.josht.starling.foxhole.controls
 				{
 					if(touch.phase == TouchPhase.BEGAN)
 					{
-						location = touch.getLocation(this);
+						touch.getLocation(this, HELPER_POINT);
 						this._touchPointID = touch.id;
 						this._thumbStartX = this.thumb.x;
-						this._touchStartX = location.x;
+						this._touchStartX = HELPER_POINT.x;
 						return;
 					}
 				}

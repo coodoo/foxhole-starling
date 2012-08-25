@@ -26,19 +26,20 @@ package org.josht.starling.foxhole.controls.supportClasses
 {
 	import flash.geom.Point;
 	import flash.utils.Dictionary;
-
-	import org.josht.starling.foxhole.controls.*;
+	
+	import org.josht.starling.foxhole.controls.List;
 	import org.josht.starling.foxhole.controls.renderers.IListItemRenderer;
 	import org.josht.starling.foxhole.core.FoxholeControl;
 	import org.josht.starling.foxhole.core.PropertyProxy;
 	import org.josht.starling.foxhole.data.ListCollection;
 	import org.josht.starling.foxhole.layout.ILayout;
+	import org.josht.starling.foxhole.layout.IVariableVirtualLayout;
 	import org.josht.starling.foxhole.layout.IVirtualLayout;
 	import org.josht.starling.foxhole.layout.LayoutBoundsResult;
 	import org.josht.starling.foxhole.layout.ViewPortBounds;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.DisplayObject;
 	import starling.events.Touch;
 	import starling.events.TouchEvent;
@@ -55,6 +56,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 		private static const helperPoint:Point = new Point();
 		private static const helperBounds:ViewPortBounds = new ViewPortBounds();
 		private static const helperResult:LayoutBoundsResult = new LayoutBoundsResult();
+		private static const helperVector:Vector.<int> = new <int>[];
 		
 		public function ListDataViewPort()
 		{
@@ -306,6 +308,27 @@ package org.josht.starling.foxhole.controls.supportClasses
 			this.invalidate(INVALIDATION_FLAG_STYLES);
 		}
 
+		/**
+		 * jx - 我加的
+		 * 
+		 * BookList 會在運行過程中不斷往 dataCollection 裏加 item，每次一加就會觸發 List 建立 temp renderer 量長寬，
+		 * 為了防止它發生，我人工給定 typical width/height
+		 * 但為了不要妨礙其它 List 元件運作，因此改用一支 method 來設定，並且透過 typicalSizeSet 變數來影響 list 是否建立 temp renderer
+		 * 也就是說，一般正常使用 List 時，不設這個值也沒關係，就是依照 foxhole::List 原本的設計運行，
+		 * 但如果為了優化速度，就人工操作這支 method，它就會阻止 List 建立 renderer。
+		 * 
+		 * 使用此 method 的先決條件是：每個 item 的 w, h 要是固定的，例如 book page :)
+		 */
+		public function setTypicalSize( w:Number, h:Number ):void
+		{
+			typeicalSizeSet = true;
+			_typicalItemWidth = w;
+			_typicalItemHeight = h;
+		}
+		
+		//jx - 如果有人工給定 typicalItem W/H, 要設定此 flag
+		private var typeicalSizeSet:Boolean = false;
+		
 		private var _typicalItemWidth:Number = NaN;
 
 		public function get typicalItemWidth():Number
@@ -363,6 +386,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 		}
 
 		private var _ignoreLayoutChanges:Boolean = false;
+		private var _ignoreRendererResizing:Boolean = false;
 
 		private var _layout:ILayout;
 
@@ -496,7 +520,13 @@ package org.josht.starling.foxhole.controls.supportClasses
 
 			if(stylesInvalid || dataInvalid || itemRendererInvalid)
 			{
-				this.calculateTypicalValues();
+				if(this._layout is IVariableVirtualLayout)
+				{
+					IVariableVirtualLayout(this._layout).resetVariableVirtualCache();
+				}
+				//jx - 防止 collection.addItem() 時 List 不斷預建 renderer
+				if( !typeicalSizeSet )
+					this.calculateTypicalValues();
 			}
 
 			if(scrollInvalid || sizeInvalid || dataInvalid || itemRendererInvalid)
@@ -512,6 +542,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 				this.refreshSelection();
 			}
 			const rendererCount:int = this._activeRenderers.length;
+			//trace("rendererCount = ", rendererCount);//jxnote
 			for(var i:int = 0; i < rendererCount; i++)
 			{
 				var itemRenderer:DisplayObject = DisplayObject(this._activeRenderers[i]);
@@ -532,7 +563,11 @@ package org.josht.starling.foxhole.controls.supportClasses
 
 			if(scrollInvalid || dataInvalid || itemRendererInvalid || sizeInvalid)
 			{
-				this._layout.layout(this._layoutItems, helperBounds, helperResult);
+				this._ignoreRendererResizing = true;
+				//trace("放前 w, h: ", helperResult.contentWidth );
+				this._layout.layout(this._layoutItems, helperBounds, helperResult);//jxnote: 決定下一個 renderer 放左 or 右
+				//trace("放後 w, h: ", helperResult.contentWidth );
+				this._ignoreRendererResizing = false;
 				this.setSizeInternal(helperResult.contentWidth, helperResult.contentHeight, false);
 				this.actualVisibleWidth = helperResult.viewPortWidth;
 				this.actualVisibleHeight = helperResult.viewPortHeight;
@@ -542,9 +577,18 @@ package org.josht.starling.foxhole.controls.supportClasses
 		protected function calculateTypicalValues():void
 		{
 			var typicalItem:Object = this._typicalItem;
-			if(!typicalItem && this._dataProvider && this._dataProvider.length > 0)
+			if(!typicalItem)
 			{
-				typicalItem = this._dataProvider.getItemAt(0);
+				if(this._dataProvider && this._dataProvider.length > 0)
+				{
+					typicalItem = this._dataProvider.getItemAt(0);
+				}
+				else
+				{
+					this._typicalItemWidth = 0;
+					this._typicalItemHeight = 0;
+					return;
+				}
 			}
 
 			const typicalRenderer:IListItemRenderer = this.createRenderer(typicalItem, 0, true);
@@ -625,8 +669,6 @@ package org.josht.starling.foxhole.controls.supportClasses
 		private function findUnrenderedData():void
 		{
 			const itemCount:int = this._dataProvider ? this._dataProvider.length : 0;
-			var startIndex:int = 0;
-			var endIndex:int = itemCount - 1;
 			const virtualLayout:IVirtualLayout = this._layout as IVirtualLayout;
 			const useVirtualLayout:Boolean = virtualLayout && virtualLayout.useVirtualLayout;
 			if(useVirtualLayout)
@@ -636,13 +678,13 @@ package org.josht.starling.foxhole.controls.supportClasses
 				virtualLayout.typicalItemHeight = this._typicalItemHeight;
 				this._ignoreLayoutChanges = false;
 				virtualLayout.measureViewPort(itemCount, helperBounds, helperPoint);
-				startIndex = virtualLayout.getMinimumItemIndexAtScrollPosition(this._horizontalScrollPosition, this._verticalScrollPosition, helperPoint.x, helperPoint.y, itemCount);
-				endIndex = virtualLayout.getMaximumItemIndexAtScrollPosition(this._horizontalScrollPosition, this._verticalScrollPosition, helperPoint.x, helperPoint.y, itemCount);
+				virtualLayout.getVisibleIndicesAtScrollPosition(this._horizontalScrollPosition, this._verticalScrollPosition, helperPoint.x, helperPoint.y, itemCount, helperVector);
 			}
+			//jxnote: 重要，上面執行完 getVisibleIndicesAtScrollPosition() 時，已算出哪兩個 item (idx) 即將可視
+			//下面只是依前面傳回的 helperVector 更新 _layoutItems[], 不可視的都設為 null, 可視的兩筆就建立 item renderer
 			for(var i:int = 0; i < itemCount; i++)
 			{
-				//the end index is included in the visible items
-				if(i < startIndex || i > endIndex)
+				if(useVirtualLayout && helperVector.indexOf(i) < 0)
 				{
 					this._layoutItems[i] = null;
 				}
@@ -705,7 +747,6 @@ package org.josht.starling.foxhole.controls.supportClasses
 			if(isTemporary || this._inactiveRenderers.length == 0)
 			{
 				var renderer:IListItemRenderer;
-				
 				if(this._itemRendererFactory != null)
 				{
 					renderer = IListItemRenderer(this._itemRendererFactory());
@@ -714,20 +755,15 @@ package org.josht.starling.foxhole.controls.supportClasses
 				{
 					renderer = new this._itemRendererType();
 				}
-				
 				renderer.onChange.add(renderer_onChange);
-				
-				const displayRenderer:DisplayObject = DisplayObject(renderer);
-				
+				const displayRenderer:FoxholeControl = FoxholeControl(renderer);
 				displayRenderer.addEventListener(TouchEvent.TOUCH, renderer_touchHandler);
-				
 				this.addChild(displayRenderer);
 			}
 			else
 			{
 				renderer = this._inactiveRenderers.shift();
 			}
-			
 			renderer.data = item;
 			renderer.index = index;
 			renderer.owner = this._owner;
@@ -736,6 +772,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 			{
 				this._rendererMap[item] = renderer;
 				this._activeRenderers.push(renderer);
+				FoxholeControl(renderer).onResize.add(renderer_onResize);
 			}
 			
 			return renderer;
@@ -744,8 +781,9 @@ package org.josht.starling.foxhole.controls.supportClasses
 		private function destroyRenderer(renderer:IListItemRenderer):void
 		{
 			renderer.onChange.remove(renderer_onChange);
-			const displayRenderer:DisplayObject = DisplayObject(renderer);
+			const displayRenderer:FoxholeControl = FoxholeControl(renderer);
 			displayRenderer.removeEventListener(TouchEvent.TOUCH, renderer_touchHandler);
+			displayRenderer.onResize.remove(renderer_onResize);
 			this.removeChild(displayRenderer, true);
 		}
 
@@ -780,6 +818,21 @@ package org.josht.starling.foxhole.controls.supportClasses
 			}
 			this.invalidate(INVALIDATION_FLAG_SCROLL);
 		}
+
+		private function renderer_onResize(renderer:IListItemRenderer):void
+		{
+			if(this._ignoreRendererResizing)
+			{
+				return;
+			}
+			const layout:IVariableVirtualLayout = this._layout as IVariableVirtualLayout;
+			if(!layout || !layout.hasVariableItemDimensions)
+			{
+				return;
+			}
+			layout.resetVariableVirtualCacheAtIndex(renderer.index);
+			this.invalidate(INVALIDATION_FLAG_SCROLL);
+		}
 		
 		private function renderer_onChange(renderer:IListItemRenderer):void
 		{
@@ -802,7 +855,6 @@ package org.josht.starling.foxhole.controls.supportClasses
 			{
 				return;
 			}
-			
 			const renderer:IListItemRenderer = IListItemRenderer(event.currentTarget);
 			const displayRenderer:DisplayObject = DisplayObject(renderer);
 			//any began touch is okay here. we don't need to check all touches.

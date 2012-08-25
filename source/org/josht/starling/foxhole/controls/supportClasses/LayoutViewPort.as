@@ -25,15 +25,13 @@
 package org.josht.starling.foxhole.controls.supportClasses
 {
 	import flash.geom.Point;
-	
-	import jx.IExpandable;
-	
+
 	import org.josht.starling.foxhole.core.FoxholeControl;
 	import org.josht.starling.foxhole.layout.ILayout;
 	import org.josht.starling.foxhole.layout.IVirtualLayout;
 	import org.josht.starling.foxhole.layout.LayoutBoundsResult;
 	import org.josht.starling.foxhole.layout.ViewPortBounds;
-	
+
 	import starling.display.DisplayObject;
 	import starling.events.Event;
 
@@ -171,6 +169,8 @@ package org.josht.starling.foxhole.controls.supportClasses
 			this.invalidate(INVALIDATION_FLAG_SIZE);
 		}
 
+		private var _ignoreChildResizing:Boolean = false;
+
 		protected var items:Vector.<DisplayObject> = new <DisplayObject>[];
 
 		private var _layout:ILayout;
@@ -201,6 +201,25 @@ package org.josht.starling.foxhole.controls.supportClasses
 				//if we don't have a layout, nothing will need to be redrawn
 				this.invalidate(INVALIDATION_FLAG_DATA);
 			}
+		}
+
+		override public function addChildAt(child:DisplayObject, index:int):DisplayObject
+		{
+			if(child is FoxholeControl)
+			{
+				FoxholeControl(child).onResize.add(child_onResize);
+			}
+			return super.addChildAt(child, index);
+		}
+
+		override public function removeChildAt(index:int, dispose:Boolean = false):DisplayObject
+		{
+			const child:DisplayObject = super.removeChildAt(index, dispose);
+			if(child is FoxholeControl)
+			{
+				FoxholeControl(child).onResize.remove(child_onResize);
+			}
+			return child;
 		}
 
 		override public function dispose():void
@@ -236,17 +255,11 @@ package org.josht.starling.foxhole.controls.supportClasses
 				helperBounds.minHeight = this._minVisibleHeight;
 				helperBounds.maxWidth = this._maxVisibleWidth;
 				helperBounds.maxHeight = this._maxVisibleHeight;
-				
-				//jx - 加一頁時不要重排，也不要改變 hsp 值，畫面就不會閃
-				//手法是檢查 itemContainer.expanded 是否為 true ←下面這個 if 條件要小心寫，不然會影響到其它正常 ScrollContainer 的運作
-				if( this._layout && items.length != 0 && 
-					( !(items[0] is IExpandable) || 
-						( items[0] is IExpandable && 
-						IExpandable(items[0]).expanded == false ) )
-				)
+				if(this._layout)
 				{
-					//這裏叫 layout 重新排，畫面就會閃
+					this._ignoreChildResizing = true;
 					this._layout.layout(this.items, helperBounds, helperResult);
+					this._ignoreChildResizing = false;
 					this.setSizeInternal(helperResult.contentWidth, helperResult.contentHeight, false);
 				}
 				else
@@ -264,34 +277,28 @@ package org.josht.starling.foxhole.controls.supportClasses
 				}
 			}
 		}
-		
-		//TODO: 確認為何要傳入這個值？它似乎沒起實質作用
-		public var isRTL:Boolean = false;
 
 		protected function layout_onLayoutChange(layout:ILayout):void
 		{
 			this.invalidate(INVALIDATION_FLAG_DATA);
 		}
 
-		protected function child_resizeHandler(child:FoxholeControl):void
+		protected function child_onResize(child:FoxholeControl):void
 		{
+			if(this._ignoreChildResizing)
+			{
+				return;
+			}
 			this.invalidate(INVALIDATION_FLAG_DATA);
 		}
 
 		protected function addedHandler(event:Event):void
 		{
 			const item:DisplayObject = DisplayObject(event.target);
-			
-			//jx: added event will be triggered when layoutViewPort was added on stage, hence needs to filter it out
 			if(item.parent != this)
 			{
 				return;
 			}
-			
-			//jx: monitor child size changes
-			if( item is FoxholeControl )
-				FoxholeControl( item ).onResize.add( child_resizeHandler );
-			
 			const index:int = this.getChildIndex(item);
 			this.items.splice(index, 0, item);
 			this.invalidate(INVALIDATION_FLAG_DATA);

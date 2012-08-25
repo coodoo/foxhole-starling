@@ -25,10 +25,10 @@
 package org.josht.starling.foxhole.layout
 {
 	import flash.geom.Point;
-
+	
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.DisplayObject;
 
 	/**
@@ -82,6 +82,11 @@ package org.josht.starling.foxhole.layout
 		public function HorizontalLayout()
 		{
 		}
+
+		/**
+		 * @private
+		 */
+		protected var _widthCache:Array = [];
 
 		/**
 		 * @private
@@ -295,32 +300,33 @@ package org.josht.starling.foxhole.layout
 		/**
 		 * @private
 		 */
-		private var _indexToItemBoundsFunction:Function;
+		private var _hasVariableItemDimensions:Boolean = false;
 
 		/**
 		 * @inheritDoc
 		 */
-		public function get indexToItemBoundsFunction():Function
+		public function get hasVariableItemDimensions():Boolean
 		{
-			return this._indexToItemBoundsFunction;
+			return this._hasVariableItemDimensions;
 		}
 
 		/**
 		 * @private
 		 */
-		public function set indexToItemBoundsFunction(value:Function):void
+		public function set hasVariableItemDimensions(value:Boolean):void
 		{
-			if(this._indexToItemBoundsFunction == value)
+			if(this._hasVariableItemDimensions == value)
 			{
 				return;
 			}
-			this._indexToItemBoundsFunction = value;
+			this._hasVariableItemDimensions = value;
+			this._onLayoutChange.dispatch(this);
 		}
 
 		/**
 		 * @private
 		 */
-		private var _typicalItemWidth:Number = 0;
+		private var _typicalItemWidth:Number = -1;
 
 		/**
 		 * @inheritDoc
@@ -345,7 +351,7 @@ package org.josht.starling.foxhole.layout
 		/**
 		 * @private
 		 */
-		private var _typicalItemHeight:Number = 0;
+		private var _typicalItemHeight:Number = -1;
 
 		/**
 		 * @inheritDoc
@@ -394,42 +400,42 @@ package org.josht.starling.foxhole.layout
 			const explicitWidth:Number = suggestedBounds ? suggestedBounds.explicitWidth : NaN;
 			const explicitHeight:Number = suggestedBounds ? suggestedBounds.explicitHeight : NaN;
 
-			var maxItemHeight:Number = 0;
+			var maxItemHeight:Number = this._useVirtualLayout ? this._typicalItemHeight : 0;
 			var positionX:Number = boundsX + this._paddingLeft;
+			//trace("\npositionX: ", positionX);
 			const itemCount:int = items.length;
 			for(var i:int = 0; i < itemCount; i++)
 			{
 				var item:DisplayObject = items[i];
 				if(this._useVirtualLayout && !item)
 				{
-					if(this._indexToItemBoundsFunction != null)
+					if(!this._hasVariableItemDimensions || isNaN(this._widthCache[i]))
 					{
-						helperPoint = this._indexToItemBoundsFunction(i, helperPoint);
-						positionX += helperPoint.x + this._gap;
-						maxItemHeight = Math.max(maxItemHeight, helperPoint.y);
+						positionX += this._typicalItemWidth + this._gap;
+						//trace("\t", i, " >null item 設 positionX = ", positionX );
 					}
 					else
 					{
-						positionX += this._typicalItemWidth + this._gap;
-						maxItemHeight = Math.max(maxItemHeight, this._typicalItemHeight);
+						positionX += this._widthCache[i] + this._gap;
 					}
 				}
 				else
 				{
-					//jx: 關鍵在這裏
-					item.x = positionX;
+					item.x = positionX;//jxnote: 這裏決定了下一個 renderer 放的位置
+//					trace("\t進", i ," >item.x =" , item.x);
 					if(this._useVirtualLayout)
 					{
-						if(this._indexToItemBoundsFunction != null)
+						if(this._hasVariableItemDimensions)
 						{
-							helperPoint = this._indexToItemBoundsFunction(i, helperPoint);
-							item.width = helperPoint.x;
-							item.height = helperPoint.y;
+							if(isNaN(this._widthCache[i]))
+							{
+								this._widthCache[i] = item.width;
+								this._onLayoutChange.dispatch(this);
+							}
 						}
-						else
+						else if(this._typicalItemWidth >= 0)
 						{
 							item.width = this._typicalItemWidth;
-							item.height = this._typicalItemHeight;
 						}
 					}
 					positionX += item.width + this._gap;
@@ -534,21 +540,26 @@ package org.josht.starling.foxhole.layout
 			const maxWidth:Number = viewPortBounds ? viewPortBounds.maxWidth : Number.POSITIVE_INFINITY;
 			const maxHeight:Number = viewPortBounds ? viewPortBounds.maxHeight : Number.POSITIVE_INFINITY;
 
-			var maxItemHeight:Number = 0;
+			var maxItemHeight:Number = this._typicalItemHeight;
 			var positionX:Number = 0;
-			if(this._indexToItemBoundsFunction != null)
+
+			if(!this._hasVariableItemDimensions)
 			{
-				for(var i:int = 0; i < itemCount; i++)
-				{
-					helperPoint = this._indexToItemBoundsFunction(i, helperPoint);
-					positionX += helperPoint.x + this._gap;
-					maxItemHeight = Math.max(maxItemHeight, helperPoint.y);
-				}
+				positionX += ((this._typicalItemWidth + this._gap) * itemCount);
 			}
 			else
 			{
-				positionX += itemCount * (this._typicalItemWidth + this._gap);
-				maxItemHeight = this._typicalItemHeight;
+				for(var i:int = 0; i < itemCount; i++)
+				{
+					if(isNaN(this._widthCache[i]))
+					{
+						positionX += this._typicalItemWidth + this._gap;
+					}
+					else
+					{
+						positionX += this._widthCache[i] + this._gap;
+					}
+				}
 			}
 
 			if(needsWidth)
@@ -575,10 +586,38 @@ package org.josht.starling.foxhole.layout
 		/**
 		 * @inheritDoc
 		 */
-		public function getMinimumItemIndexAtScrollPosition(scrollX:Number, scrollY:Number, width:Number, height:Number, itemCount:int):int
+		public function resetVariableVirtualCache():void
 		{
-			if(this._indexToItemBoundsFunction == null)
+			this._widthCache.length = 0;
+		}
+
+		/**
+		 * @inheritDoc
+		 */
+		public function resetVariableVirtualCacheAtIndex(index:int):void
+		{
+			delete this._widthCache[index];
+		}
+
+		/**
+		 * @inheritDoc
+		 */
+		public function getVisibleIndicesAtScrollPosition(scrollX:Number, scrollY:Number, width:Number, height:Number, itemCount:int, result:Vector.<int> = null):Vector.<int>
+		{
+			//trace("\n\ngetVisibleIndicesAtScrollPosition >scrollX= ", scrollX);
+			
+			//jx - 即使為 RTL，資料順序上也是從 0 → 1 → 2 依序往下走，因此取絕對值，下面算出來的 minimum, maximum 就會正確
+			scrollX = Math.abs( scrollX );
+			
+			if(!result)
 			{
+				result = new <int>[];
+			}
+			result.length = 0;
+			if(!this._hasVariableItemDimensions)
+			{
+				//this case can be optimized because we know that every item has
+				//the same width
 				var totalItemWidth:Number = itemCount * (this._typicalItemWidth + this._gap) - this._gap;
 				var indexOffset:int = 0;
 				if(totalItemWidth < width)
@@ -592,51 +631,55 @@ package org.josht.starling.foxhole.layout
 						indexOffset = Math.ceil(((width - totalItemWidth) / (this._typicalItemWidth + this._gap)) / 2);
 					}
 				}
-				return -indexOffset + Math.max(0, (scrollX - this._paddingLeft) / (this._typicalItemWidth + this._gap));
-			}
-
-			totalItemWidth = this._paddingLeft;
-			for(var i:int = 0; i < itemCount; i++)
-			{
-				helperPoint = this._indexToItemBoundsFunction(i, helperPoint);
-				totalItemWidth += helperPoint.x;
-				if(totalItemWidth > scrollX)
+				//目前在 p1, 往下一頁前進 scrollX = 306 / 300(頁寬) -> 1 ← 因此 minimum=1 可算出當前頁, maximum=2 則為後方預備頁
+				//往前一頁走 scrollX = 282 -> 0 ← minimum = 0, maximum=1
+				//這裏計算好 1,2 或 2,3 將 idx 放入 vector，將來回到 listDataViewPort 就會由前往後依序建立 item renderer
+				//當手指往左滑時，它會立即判斷出兩筆資料為 1,2；反之，則會算出 2, 3
+				//這就是 預備 renderer 可以即時左右備位的原理
+				var minimum:int = -indexOffset + Math.max(0, (scrollX - this._paddingLeft) / (this._typicalItemWidth + this._gap));
+				var maximum:int = minimum + Math.ceil(width / (this._typicalItemWidth + this._gap));
+				//jxnote: 這裏極重要，手指移動過程程，它會即時判斷未來兩個可視的 renderer
+//				trace("\nmin=", minimum, " >max: ", maximum );
+				for(var i:int = minimum; i <= maximum; i++)
 				{
-					return i;
+//					trace("\t塞入 vector: ", i );
+					result.push(i);
 				}
-				totalItemWidth += this._gap;
+				return result;	//jxnote: List 用 virtualLayout 時，通常在這裏結束
 			}
-			//this should probably never happen...
-			return itemCount - 1;
+			const maxPositionX:Number = scrollX + width;
+			var positionX:Number = this._paddingLeft;
+			for(i = 0; i < itemCount; i++)
+			{
+				if(isNaN(this._widthCache[i]))
+				{
+					var itemWidth:Number = this._typicalItemWidth;
+				}
+				else
+				{
+					itemWidth = this._widthCache[i];
+				}
+				var oldPositionX:Number = positionX;
+				positionX += itemWidth + this._gap;
+				if(positionX > scrollX && oldPositionX < maxPositionX)
+				{
+					result.push(i);
+				}
+
+				if(positionX >= maxPositionX)
+				{
+					return result;
+				}
+			}
+			return result;
 		}
 
 		/**
 		 * @inheritDoc
-		 */
-		public function getMaximumItemIndexAtScrollPosition(scrollX:Number, scrollY:Number, width:Number, height:Number, itemCount:int):int
-		{
-			const minimum:int = this.getMinimumItemIndexAtScrollPosition(scrollX, scrollY, width, height, itemCount);
-			if(this._indexToItemBoundsFunction == null)
-			{
-				return minimum + Math.ceil(width / (this._typicalItemWidth + this._gap));
-			}
-			const maxX:Number = scrollX + width;
-			var totalItemWidth:Number = scrollX;
-			for(var i:int = minimum + 1; i < itemCount; i++)
-			{
-				helperPoint = this._indexToItemBoundsFunction(i, helperPoint);
-				totalItemWidth += helperPoint.x;
-				if(totalItemWidth > maxX)
-				{
-					return i;
-				}
-				totalItemWidth += this._gap;
-			}
-			return itemCount - 1;
-		}
-
-		/**
-		 * @inheritDoc
+		 * jxnote: 這是在計算 內部虛擬的超長 viewPort，例如有100個 item，每個 item.width = 300，
+		 * 目前將顯示第20筆，這時就要算出 hsp = 300 * (20-1) 這個值
+		 * 
+		 * note:它因為用 arr[index] 算，本來就是 0-based，因此不用減1
 		 */
 		public function getScrollPositionForItemIndexAndBounds(index:int, width:Number, height:Number, result:Point = null):Point
 		{
@@ -645,23 +688,29 @@ package org.josht.starling.foxhole.layout
 				result = new Point();
 			}
 
-			result.y = 0;
-			if(this._indexToItemBoundsFunction == null)
+			if(!this._hasVariableItemDimensions)
 			{
-				const typicalItemWidth:Number = this._typicalItemWidth;
-				result.x = this._paddingLeft + (typicalItemWidth + this._gap) * index - (width - typicalItemWidth) / 2;
+				//固定 item size 的情況下，一定是進到這段
+				result.x = this._paddingLeft + (this._typicalItemWidth + this._gap) * index - (width - this._typicalItemWidth) / 2;
 			}
 			else
 			{
-				var totalItemWidth:Number = this._paddingLeft;
+				var positionX:Number = this._paddingLeft;
 				for(var i:int = 0; i < index; i++)
 				{
-					helperPoint = this._indexToItemBoundsFunction(i, helperPoint);
-					totalItemWidth += helperPoint.x + this._gap;
+					if(isNaN(this._widthCache[i]))
+					{
+						var itemWidth:Number = this._typicalItemWidth;
+					}
+					else
+					{
+						itemWidth = this._widthCache[i];
+					}
+					positionX += itemWidth + this._gap;
 				}
-				totalItemWidth -= (width - helperPoint.x) / 2;
-				result.x = totalItemWidth;
+				result.y = positionX - (width - itemWidth) / 2;
 			}
+			result.y = 0;
 			return result;
 		}
 	}

@@ -31,7 +31,7 @@ package org.josht.starling.foxhole.controls
 	import org.josht.starling.foxhole.layout.IVirtualLayout;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-	
+
 	import starling.display.DisplayObject;
 
 	/**
@@ -39,42 +39,28 @@ package org.josht.starling.foxhole.controls
 	 */
 	public class ScrollContainer extends FoxholeControl
 	{
-		
 		/**
-		 * The container may scroll, if the view port is larger than the
-		 * container's bounds.
+		 * The default value added to the <code>nameList</code> of the scroller.
 		 */
-		public static const SCROLL_POLICY_AUTO:String = "auto";
-
-		/**
-		 * The container does not scroll at all.
-		 */
-		public static const SCROLL_POLICY_OFF:String = "off";
-
-		/**
-		 * The container always scrolls.
-		 */
-		public static const SCROLL_POLICY_ON:String = "on";
+		public static const DEFAULT_CHILD_NAME_SCROLLER:String = "foxhole-scroll-container-scroller";
 
 		/**
 		 * Constructor.
 		 */
 		public function ScrollContainer()
 		{
-			//這裏建立了宿主容器，將來所有小孩都放這裏面
 			this.viewPort = new LayoutViewPort();
 		}
 
 		/**
 		 * The value added to the <code>nameList</code> of the scroller.
 		 */
-		protected var defaultScrollerName:String = "foxhole-scrollcontainer-scroller";
+		protected var scrollerName:String = DEFAULT_CHILD_NAME_SCROLLER;
 
 		/**
 		 * @private
 		 */
-		//jx 改成 public
-		public var scroller:Scroller;
+		protected var scroller:Scroller;
 
 		/**
 		 * @private
@@ -152,38 +138,7 @@ package org.josht.starling.foxhole.controls
 		 */
 		public function get maxHorizontalScrollPosition():Number
 		{
-			//jx
-			if( scroller )
-				return this.scroller.maxHorizontalScrollPosition;
-			
 			return this._maxHorizontalScrollPosition;
-		}
-
-		/**
-		 * @private
-		 */
-		private var _horizontalScrollPolicy:String = SCROLL_POLICY_AUTO;
-
-		/**
-		 * Determines whether the container may scroll horizontally (on the
-		 * x-axis) or not.
-		 */
-		public function get horizontalScrollPolicy():String
-		{
-			return this._horizontalScrollPolicy;
-		}
-
-		/**
-		 * @private
-		 */
-		public function set horizontalScrollPolicy(value:String):void
-		{
-			if(this._horizontalScrollPolicy == value)
-			{
-				return;
-			}
-			this._horizontalScrollPolicy = value;
-			this.invalidate(INVALIDATION_FLAG_SCROLL);
 		}
 
 		/**
@@ -231,33 +186,6 @@ package org.josht.starling.foxhole.controls
 		public function get maxVerticalScrollPosition():Number
 		{
 			return this._maxVerticalScrollPosition;
-		}
-
-		/**
-		 * @private
-		 */
-		private var _verticalScrollPolicy:String = SCROLL_POLICY_AUTO;
-
-		/**
-		 * Determines whether the container may scroll vertically (on the
-		 * y-axis) or not.
-		 */
-		public function get verticalScrollPolicy():String
-		{
-			return this._verticalScrollPolicy;
-		}
-
-		/**
-		 * @private
-		 */
-		public function set verticalScrollPolicy(value:String):void
-		{
-			if(this._verticalScrollPolicy == value)
-			{
-				return;
-			}
-			this._verticalScrollPolicy = value;
-			this.invalidate(INVALIDATION_FLAG_SCROLL);
 		}
 
 		/**
@@ -356,42 +284,11 @@ package org.josht.starling.foxhole.controls
 			return this.viewPort.getChildAt(index);
 		}
 
-		//jx: 右到左支援
-		private var _isRTL:Boolean = false;
-		
-		public function get isRTL():Boolean
-		{
-			return _isRTL;
-		}
-		
-		public function set isRTL(value:Boolean):void
-		{
-			_isRTL = value;
-			
-			//pass down to child component
-			this.viewPort.isRTL = value;
-			
-			if( scroller )
-				scroller.isRTL = value;
-			
-			//要先檢查 child item 是否有 isRTL 屬性 ← 所以 flex 用 setStyle() 其實是不錯的，至少傳遞變數到下層比較方便
-//			var i:int;
-//			var len:int = this.viewPort.numChildren;
-//			for( i=0; i<len; i++ )
-//			{
-//				viewPort.getChildAt(i).isRTL = value;
-//			}
-		}
-		
 		/**
 		 * @private
 		 */
 		override public function addChildAt(child:DisplayObject, index:int):DisplayObject
 		{
-			//jx - TODO: 如果小孩加進來了，又改變了 RTL 值，這樣的寫法會無法再傳入所有小孩
-			if( "isRTL" in child )
-				child[ "isRTL" ] = isRTL;
-			
 			return this.viewPort.addChildAt(child, index);
 		}
 
@@ -469,9 +366,7 @@ package org.josht.starling.foxhole.controls
 			{
 				this.scroller = new Scroller();
 				this.scroller.viewPort = this.viewPort;
-				//jx
-				this.scroller.isRTL = this.isRTL;
-				this.scroller.nameList.add(this.defaultScrollerName);
+				this.scroller.nameList.add(this.scrollerName);
 				this.scroller.onScroll.add(scroller_onScroll);
 				super.addChildAt(this.scroller, 0);
 			}
@@ -505,8 +400,6 @@ package org.josht.starling.foxhole.controls
 			{
 				this.scroller.verticalScrollPosition = this._verticalScrollPosition;
 				this.scroller.horizontalScrollPosition = this._horizontalScrollPosition;
-				this.scroller.verticalScrollPolicy = this._verticalScrollPolicy;
-				this.scroller.horizontalScrollPolicy = this._horizontalScrollPolicy;
 			}
 
 			if(sizeInvalid)
@@ -596,15 +489,11 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function scroller_onScroll(scroller:Scroller):void
 		{
-			const oldHorizontalScrollPosition:Number = this._horizontalScrollPosition;
-			const oldVerticalScrollPosition:Number = this._verticalScrollPosition;
 			this._horizontalScrollPosition = this.scroller.horizontalScrollPosition;
 			this._verticalScrollPosition = this.scroller.verticalScrollPosition;
-			if(oldHorizontalScrollPosition != this._horizontalScrollPosition ||
-				oldVerticalScrollPosition != this._verticalScrollPosition)
-			{
-				this._onScroll.dispatch(this);
-			}
+			this._maxHorizontalScrollPosition = this.scroller.maxHorizontalScrollPosition;
+			this._maxVerticalScrollPosition = this.scroller.maxVerticalScrollPosition;
+			this._onScroll.dispatch(this);
 		}
 	}
 }
