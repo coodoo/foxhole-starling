@@ -1817,6 +1817,12 @@ package org.josht.starling.foxhole.controls
 		private var leftLimit:Number;
 		private var rightLimit:Number;
 		
+		private function updateLimits():void
+		{
+			leftLimit = isRTL ? maxHorizontalScrollPosition : 0;
+			rightLimit = isRTL ? 0 : maxHorizontalScrollPosition;
+		}
+		
 		/**
 		 * @private
 		 * jx
@@ -1829,9 +1835,7 @@ package org.josht.starling.foxhole.controls
 //			trace("\nstartHSP: ", _startHorizontalScrollPosition, " >offset: ", offset, " >Position: ", position );
 			
 			//
-			leftLimit = isRTL ? maxHorizontalScrollPosition : 0;
-			rightLimit = isRTL ? 0 : maxHorizontalScrollPosition;
-			
+			updateLimits();
 			
 			//jx: 進入點？這是 minHSP 值
 			//if(position < 0)
@@ -1915,6 +1919,11 @@ package org.josht.starling.foxhole.controls
 		private function finishScrollingHorizontally():void
 		{
 			var targetHorizontalScrollPosition:Number = NaN;
+			
+			//jx
+			if( isNaN(leftLimit) || isNaN(rightLimit) )
+				updateLimits();
+			
 			//if(this._horizontalScrollPosition < 0)
 			if( this._horizontalScrollPosition < leftLimit )
 			{

@@ -272,6 +272,8 @@ package org.josht.starling.foxhole.controls.text
 
 		/**
 		 * @inheritDoc
+		 * 
+		 * jx: 重要 - 人工觸發此元件度量文字寬度，做為外層元件擺放元件用
 		 */
 		public function measureText(result:Point = null):Point
 		{
