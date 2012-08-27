@@ -1920,8 +1920,8 @@ package org.josht.starling.foxhole.controls
 		{
 			var targetHorizontalScrollPosition:Number = NaN;
 			
-			//jx
-			if( isNaN(leftLimit) || isNaN(rightLimit) )
+			//jx: 拿掉 if() 是因為 maxHSP 可能會因為新頁數加入而不斷改變，因此每次都偵測最保險
+			//if( isNaN(leftLimit) || isNaN(rightLimit) )
 				updateLimits();
 			
 			//if(this._horizontalScrollPosition < 0)
