@@ -655,7 +655,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 			//原理是：如果前面加了頁，就無聲將 _hsp 值加大一頁，畫面就不會閃
 			if( owner.silentScrollEnabled)
 			{
-				trace("List 無聲捲回原頁面");
+				//trace("List 無聲捲回原頁面");
 				owner.silentScrollEnabled = false;
 				owner.scroller._horizontalScrollPosition += owner.width;
 			}

@@ -619,7 +619,7 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * @private
 		 */
-		//jx-暫改為 public, 原為 private
+		//jx-改為 public, 原為 private - 無聲捲動時要用
 		public var _horizontalScrollPosition:Number = 0;
 		
 		/**
