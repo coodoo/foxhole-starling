@@ -619,7 +619,8 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * @private
 		 */
-		private var _horizontalScrollPosition:Number = 0;
+		//jx-暫改為 public, 原為 private
+		public var _horizontalScrollPosition:Number = 0;
 		
 		/**
 		 * The number of pixels the scroller has been scrolled horizontally (on

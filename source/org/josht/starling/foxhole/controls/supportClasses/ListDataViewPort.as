@@ -524,7 +524,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 				{
 					IVariableVirtualLayout(this._layout).resetVariableVirtualCache();
 				}
-				//jx - 防止 collection.addItem() 時 List 不斷預建 renderer
+				//jx - 防止 collection.addItem() 時 List 不斷預建 renderer 度量大小
 				if( !typeicalSizeSet )
 					this.calculateTypicalValues();
 			}
@@ -637,7 +637,8 @@ package org.josht.starling.foxhole.controls.supportClasses
 			}
 			this._ignoreSelectionChanges = false;
 		}
-
+	
+		//每次 dataProvider 裏資料有新、刪時，就會觸發這裏執行，它真正重要的是最後四行，做了一大堆事
 		protected function refreshRenderers(itemRendererTypeIsInvalid:Boolean):void
 		{
 			const temp:Vector.<IListItemRenderer> = this._inactiveRenderers;
@@ -649,7 +650,17 @@ package org.josht.starling.foxhole.controls.supportClasses
 				this.recoverInactiveRenderers();
 				this.freeInactiveRenderers();
 			}
-
+			
+			//jx: 前面加頁時，不要推移後面頁，而要無聲捲動效果
+			//原理是：如果前面加了頁，就無聲將 _hsp 值加大一頁，畫面就不會閃
+			if( owner.silentScrollEnabled)
+			{
+				trace("List 無聲捲回原頁面");
+				owner.silentScrollEnabled = false;
+				owner.scroller._horizontalScrollPosition += owner.width;
+			}
+			//jx:end
+			
 			this._layoutItems.length = this._dataProvider ? this._dataProvider.length : 0;
 
 			helperBounds.x = helperBounds.y = 0;

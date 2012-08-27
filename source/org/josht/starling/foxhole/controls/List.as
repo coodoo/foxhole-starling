@@ -71,6 +71,11 @@ package org.josht.starling.foxhole.controls
 		{
 			super();
 		}
+		
+		/**
+		 * jx: 前面加 items 時，要無聲捲動回原可視頁面
+		 */
+		public var silentScrollEnabled:Boolean = false;
 
 		/**
 		 * The value added to the <code>nameList</code> of the scroller.

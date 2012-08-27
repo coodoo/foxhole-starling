@@ -631,6 +631,7 @@ package org.josht.starling.foxhole.layout
 						indexOffset = Math.ceil(((width - totalItemWidth) / (this._typicalItemWidth + this._gap)) / 2);
 					}
 				}
+				
 				//目前在 p1, 往下一頁前進 scrollX = 306 / 300(頁寬) -> 1 ← 因此 minimum=1 可算出當前頁, maximum=2 則為後方預備頁
 				//往前一頁走 scrollX = 282 -> 0 ← minimum = 0, maximum=1
 				//這裏計算好 1,2 或 2,3 將 idx 放入 vector，將來回到 listDataViewPort 就會由前往後依序建立 item renderer
