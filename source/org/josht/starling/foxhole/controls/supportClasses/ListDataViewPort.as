@@ -27,6 +27,8 @@ package org.josht.starling.foxhole.controls.supportClasses
 	import flash.geom.Point;
 	import flash.utils.Dictionary;
 	
+	import jx.PageItem;
+	
 	import org.josht.starling.foxhole.controls.List;
 	import org.josht.starling.foxhole.controls.renderers.IListItemRenderer;
 	import org.josht.starling.foxhole.core.FoxholeControl;
@@ -655,11 +657,11 @@ package org.josht.starling.foxhole.controls.supportClasses
 			//原理是：如果前面加了頁，就無聲將 _hsp 值加大一頁，畫面就不會閃
 			if( owner.silentScrollEnabled)
 			{
-				//trace("List 無聲捲回原頁面");
+				trace("\n\naddItem 前面加頁，要無聲回捲 - 偷加大 _hsp 值");
 				owner.silentScrollEnabled = false;
-				owner.scroller._horizontalScrollPosition += owner.width;
+				owner.scroller._horizontalScrollPosition += owner.width * ( owner.isRTL ? -1 : 1);
 			}
-			//jx:end
+			//jx:end---------------------------------------------------------------
 			
 			this._layoutItems.length = this._dataProvider ? this._dataProvider.length : 0;
 
@@ -727,6 +729,8 @@ package org.josht.starling.foxhole.controls.supportClasses
 			{
 				var item:Object = this._unrenderedData.shift();
 				var index:int = this._dataProvider.getItemIndex(item);
+				//jx
+				trace("\n\n\t建 renderer >該章第幾頁: ", PageItem(item).pageIdx, " >list 內 idx: ", index, " <", PageItem(item).publicationItemVO.description ); 
 				var renderer:IListItemRenderer = this.createRenderer(item, index, false);
 				var displayRenderer:DisplayObject = DisplayObject(renderer);
 				this._layoutItems[index] = displayRenderer;

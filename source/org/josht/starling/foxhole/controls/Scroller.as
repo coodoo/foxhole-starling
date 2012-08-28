@@ -42,6 +42,7 @@ package org.josht.starling.foxhole.controls
 	import flash.geom.Rectangle;
 	import flash.system.Capabilities;
 	import flash.utils.getTimer;
+	import flash.utils.setInterval;
 	
 	import org.josht.starling.display.ScrollRectManager;
 	import org.josht.starling.display.Sprite;
@@ -630,12 +631,18 @@ package org.josht.starling.foxhole.controls
 		{
 			return this._horizontalScrollPosition;
 		}
-		
+		var old = -1;
 		/**
 		 * @private
 		 */
 		public function set horizontalScrollPosition(value:Number):void
 		{
+//			trace(value);
+//			if( value == -600)
+//				old = -600;
+//			
+//			if( old!= -1 && value != old )
+//				trace("");
 			if(this._horizontalScrollPosition == value)
 			{
 				return;
@@ -678,7 +685,8 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * @private
 		 */
-		protected var _horizontalPageIndex:int = 0;
+		//jx: protected 改成 public
+		public var _horizontalPageIndex:int = 0;
 
 		/**
 		 * The index of the horizontal page, if snapping is enabled. If snapping
@@ -1334,6 +1342,7 @@ package org.josht.starling.foxhole.controls
 			{
 				FoxholeControl(this.horizontalScrollBar).validate();
 			}
+
 			if(this.verticalScrollBar is FoxholeControl)
 			{
 				FoxholeControl(this.verticalScrollBar).validate();
@@ -1358,7 +1367,10 @@ package org.josht.starling.foxhole.controls
 
 			if(sizeInvalid || stylesInvalid || dataInvalid || scrollBarInvalid)
 			{
+				//jxntoe: 這支最重要：每次 addItem()，就會造成 viewPort size 改變，進而要 refresh scrollPositions
+				//trace("before(draw): ", _horizontalScrollPosition );
 				this.refreshMaxScrollPositions();
+				//trace("after(draw): ", _horizontalScrollPosition );
 			}
 
 			if(sizeInvalid || scrollInvalid || scrollBarInvalid || dataInvalid)
@@ -1626,10 +1638,21 @@ package org.josht.starling.foxhole.controls
 				{
 					if(this._snapToPages)
 					{
-						this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
+						//trace("\told: ", _horizontalPageIndex, " >hsp: ", _horizontalScrollPosition )
+						//jx: 考慮 RTL，因此要即時更新 left/right limits
+						updateLimits();
+						this._horizontalScrollPosition = Math.max(leftLimit, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
+						//this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));	//original
 						this._horizontalPageIndex = Math.round(this._horizontalScrollPosition / this.actualWidth);
+//						trace("b 更新 hPageIndex: ", _horizontalPageIndex );
+						//trace("\tnew: ", _horizontalPageIndex, " >hsp: ", _horizontalScrollPosition )
 					}
-					this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, 0, this._maxHorizontalScrollPosition);
+
+					//jx: 為 rtl 而改
+					this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, leftLimit, this._maxHorizontalScrollPosition);
+					//this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, 0, this._maxHorizontalScrollPosition);//original
+					
+					//trace("\tscroller 更新hsp/maxHSP >hsp: ", _horizontalScrollPosition, "\n\t\t>pageIndex:",_horizontalPageIndex, " >max: ", _maxHorizontalScrollPosition )
 				}
 				if(this._touchPointID < 0 && !this._verticalAutoScrollTween)
 				{
@@ -1974,6 +1997,7 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function throwHorizontally(pixelsPerMS:Number):void
 		{
+			trace("pixelsPerMS = ", pixelsPerMS);
 			if(this._snapToPages)
 			{
 				//jx: 目前一定會進到這裏
@@ -1998,6 +2022,7 @@ package org.josht.starling.foxhole.controls
 				snappedPageHorizontalScrollPosition = min;
 				this.throwTo(snappedPageHorizontalScrollPosition, NaN, this._pageThrowDuration);
 				this._horizontalPageIndex = Math.round(snappedPageHorizontalScrollPosition / this.actualWidth);
+				trace("a 更新 hPageIndex: ", _horizontalPageIndex );
 				return;
 			}
 
@@ -2214,21 +2239,30 @@ package org.josht.starling.foxhole.controls
 			{
 				return;
 			}
+			
+			if( "blockWrite" in parent && parent["blockWrite"] == true )
+			{
+				trace("\n\nscroller::viewPort_onResize 因 list block 而停止");
+				return;
+			}
+			
+			//jxnote
+			//trace("\n\nviewPort_onResize 跑了 >hsp: ", _horizontalScrollPosition );
 			if(this._touchPointID >= 0)
 			{
 				if(this._velocityX > 0)
 				{
+					trace("a");
 					var difference:Number = viewPort.width - this._lastViewPortWidth;
 					//jx: rtl 時，collection.addItem() 不斷加資料，如果此時又在拖拉，會造成頁面亂跳
 					//推測: 可能是因為 RTL 時，第一頁的寬正好 300，造成多出一頁？→是因為 measure viewPort 時因為 RTL 而造成判斷多一頁？
+					//但無論如何，一旦加了這個，每次 addItem() 多出來的一頁 difference 就會被這裏吃掉設回為 0
 					if( isRTL && difference == this.width )
 					{
 						difference = 0;	//TODO: 目前 hack 是先將 diff 值給 reset 掉
 					}
+					//jx-end--------------------------------
 					this._startHorizontalScrollPosition += difference;
-//					trace("給值 = ", _startHorizontalScrollPosition );
-//					if( _startHorizontalScrollPosition==300)
-//						trace("");
 					this._horizontalScrollPosition += difference;
 				}
 				if(this._velocityY > 0)
@@ -2242,11 +2276,22 @@ package org.josht.starling.foxhole.controls
 			{
 				if(this._horizontalAutoScrollTween)
 				{
+					trace("b");
 					var initialScrollPosition:Number = this._horizontalAutoScrollTween.getInitValue("horizontalScrollPosition");
 					var targetScrollPosition:Number = this._horizontalAutoScrollTween.getValue("horizontalScrollPosition");
 					if(initialScrollPosition > targetScrollPosition)
 					{
+					trace("c");
 						difference = viewPort.width - this._lastViewPortWidth;
+						
+						//jx - 重要，原理跟上面一樣
+						if( isRTL && difference == this.width )
+						{
+							trace("目前 hack 是先將 diff 值給 reset 掉");
+							difference = 0;	//TODO: 目前 hack 是先將 diff 值給 reset 掉
+						}
+						//jx-end--------------------------------
+						
 						var tweenPosition:Number = this._horizontalAutoScrollTween.position;
 						this._horizontalScrollPosition = initialScrollPosition + difference;
 						this.throwTo(targetScrollPosition + difference, NaN,  this._horizontalAutoScrollTween.duration);
@@ -2269,6 +2314,7 @@ package org.josht.starling.foxhole.controls
 			}
 			this._lastViewPortWidth = viewPort.width;
 			this._lastViewPortHeight = viewPort.height;
+			//trace("\t離開前 hsp: ", _horizontalScrollPosition );
 			this.invalidate(INVALIDATION_FLAG_DATA);
 		}
 		
