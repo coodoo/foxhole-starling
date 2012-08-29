@@ -530,7 +530,8 @@ package org.josht.starling.foxhole.controls.supportClasses
 				if( !typeicalSizeSet )
 					this.calculateTypicalValues();
 			}
-
+			
+			//jxnote: dataProvider.addItem() 會觸發這裏反應
 			if(scrollInvalid || sizeInvalid || dataInvalid || itemRendererInvalid)
 			{
 				this.refreshRenderers(itemRendererInvalid);
@@ -566,9 +567,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 			if(scrollInvalid || dataInvalid || itemRendererInvalid || sizeInvalid)
 			{
 				this._ignoreRendererResizing = true;
-				//trace("放前 w, h: ", helperResult.contentWidth );
 				this._layout.layout(this._layoutItems, helperBounds, helperResult);//jxnote: 決定下一個 renderer 放左 or 右
-				//trace("放後 w, h: ", helperResult.contentWidth );
 				this._ignoreRendererResizing = false;
 				this.setSizeInternal(helperResult.contentWidth, helperResult.contentHeight, false);
 				this.actualVisibleWidth = helperResult.viewPortWidth;
@@ -655,14 +654,19 @@ package org.josht.starling.foxhole.controls.supportClasses
 			
 			//jx: 前面加頁時，不要推移後面頁，而要無聲捲動效果
 			//原理是：如果前面加了頁，就無聲將 _hsp 值加大一頁，畫面就不會閃
-			if( owner.silentScrollEnabled)
+			if( owner.silentScrollEnabled )
 			{
-				trace("\n\naddItem 前面加頁，要無聲回捲 - 偷加大 _hsp 值");
 				owner.silentScrollEnabled = false;
+				
+				//jxadded: 通知 scroller 這邊無聲加大了 _hsp 值
+				owner.scroller.stopTweening();
+				
+				//jxadded: 將 scroller.hsp 加大一頁，這個值下面也會被用於判斷最新可視的兩頁
 				owner.scroller._horizontalScrollPosition += owner.width * ( owner.isRTL ? -1 : 1);
+				//trace("\n\nViewPort::addItem 前面加頁 - 偷加大 _hsp 值 >hsp: ", owner.scroller._horizontalScrollPosition );
 			}
 			//jx:end---------------------------------------------------------------
-			
+
 			this._layoutItems.length = this._dataProvider ? this._dataProvider.length : 0;
 
 			helperBounds.x = helperBounds.y = 0;
@@ -672,13 +676,13 @@ package org.josht.starling.foxhole.controls.supportClasses
 			helperBounds.minHeight = this._minVisibleHeight;
 			helperBounds.maxWidth = this._maxVisibleWidth;
 			helperBounds.maxHeight = this._maxVisibleHeight;
-
+			
 			this.findUnrenderedData();
 			this.recoverInactiveRenderers();
 			this.renderUnrenderedData();
 			this.freeInactiveRenderers();
 		}
-		
+
 		private function findUnrenderedData():void
 		{
 			const itemCount:int = this._dataProvider ? this._dataProvider.length : 0;
@@ -691,8 +695,12 @@ package org.josht.starling.foxhole.controls.supportClasses
 				virtualLayout.typicalItemHeight = this._typicalItemHeight;
 				this._ignoreLayoutChanges = false;
 				virtualLayout.measureViewPort(itemCount, helperBounds, helperPoint);
-				virtualLayout.getVisibleIndicesAtScrollPosition(this._horizontalScrollPosition, this._verticalScrollPosition, helperPoint.x, helperPoint.y, itemCount, helperVector);
+				
+				//jxadded: 改抓 scroller.hsp，因為上面已加大一頁，用這個新值才能判斷出原先可視(但現在因為前面插一頁而已偏移的兩頁)
+				virtualLayout.getVisibleIndicesAtScrollPosition(owner.scroller._horizontalScrollPosition, this._verticalScrollPosition, helperPoint.x, helperPoint.y, itemCount, helperVector);
+//				virtualLayout.getVisibleIndicesAtScrollPosition(this._horizontalScrollPosition, this._verticalScrollPosition, helperPoint.x, helperPoint.y, itemCount, helperVector);
 			}
+			
 			//jxnote: 重要，上面執行完 getVisibleIndicesAtScrollPosition() 時，已算出哪兩個 item (idx) 即將可視
 			//下面只是依前面傳回的 helperVector 更新 _layoutItems[], 不可視的都設為 null, 可視的兩筆就建立 item renderer
 			for(var i:int = 0; i < itemCount; i++)
@@ -730,7 +738,7 @@ package org.josht.starling.foxhole.controls.supportClasses
 				var item:Object = this._unrenderedData.shift();
 				var index:int = this._dataProvider.getItemIndex(item);
 				//jx
-				trace("\n\n\t建 renderer >該章第幾頁: ", PageItem(item).pageIdx, " >list 內 idx: ", index, " <", PageItem(item).publicationItemVO.description ); 
+				//trace("\n\n\t建 renderer >該章第幾頁: ", PageItem(item).pageIdx, " >list 內 idx: ", index, " <", PageItem(item).publicationItemVO.description ); 
 				var renderer:IListItemRenderer = this.createRenderer(item, index, false);
 				var displayRenderer:DisplayObject = DisplayObject(renderer);
 				this._layoutItems[index] = displayRenderer;

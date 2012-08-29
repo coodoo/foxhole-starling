@@ -43,6 +43,7 @@ package org.josht.starling.foxhole.controls
 	import flash.system.Capabilities;
 	import flash.utils.getTimer;
 	import flash.utils.setInterval;
+	import flash.utils.setTimeout;
 	
 	import org.josht.starling.display.ScrollRectManager;
 	import org.josht.starling.display.Sprite;
@@ -620,7 +621,7 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * @private
 		 */
-		//jx-改為 public, 原為 private - 無聲捲動時要用
+		//jx-改為 public, 原為 private - 無聲捲動時要用 - ListDataViewPort.refreshRenderers() 會來呼叫
 		public var _horizontalScrollPosition:Number = 0;
 		
 		/**
@@ -1616,6 +1617,8 @@ package org.josht.starling.foxhole.controls
 
 		/**
 		 * @private
+		 * 
+		 * jxnote: draw() → refreshMaxScrollPositions()
 		 */
 		protected function refreshMaxScrollPositions():void
 		{
@@ -1946,7 +1949,7 @@ package org.josht.starling.foxhole.controls
 			
 			//jx: 拿掉 if() 是因為 maxHSP 可能會因為新頁數加入而不斷改變，因此每次都偵測最保險
 			//if( isNaN(leftLimit) || isNaN(rightLimit) )
-				updateLimits();
+			updateLimits();
 			
 			//if(this._horizontalScrollPosition < 0)
 			if( this._horizontalScrollPosition < leftLimit )
@@ -1968,6 +1971,8 @@ package org.josht.starling.foxhole.controls
 			}
 			
 			this._isDraggingHorizontally = false;
+			
+			//jxnote: 最後跑這句只是為了觸發 hideHorizontalScrollBar() 將 scrollBar 藏起來，因為它傳出去的值是 NaN
 			this.throwTo(targetHorizontalScrollPosition, NaN, this._elasticSnapDuration);
 		}
 		
@@ -1990,6 +1995,30 @@ package org.josht.starling.foxhole.controls
 			this.throwTo(NaN, targetVerticalScrollPosition, this._elasticSnapDuration);
 		}
 		
+		
+		/**
+		 * jxadded
+		 * viewPort 過來通知它那邊 即將 無聲加大 _hsp 值
+		 * 這裏要立即停掉可能正在進行中的 tween, 並且跳到指定位置
+		 * 這時的 hsp 會差一頁，但因為稍後 viewPort 會將 _hsp += width 就正好補回來
+		 * 因此這是一個雙邊合作的手法
+		 */
+		public function stopTweening():void
+		{
+			if( _horizontalAutoScrollTween)
+			{
+				//立即暫停進行中的動畫					
+				_horizontalAutoScrollTween.paused = true;
+				
+				//並且跳到原先指定位置
+				_horizontalScrollPosition = _horizontalAutoScrollTween.getValue( "horizontalScrollPosition");
+				trace("\tstopTweening::跳到預定位置 = ", _horizontalScrollPosition );
+				
+				//清掉動畫
+				_horizontalAutoScrollTween = null;
+			}
+		}
+		
 		/**
 		 * @private
 		 * jx: 放手自然完成捲動並停止
@@ -1997,9 +2026,9 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function throwHorizontally(pixelsPerMS:Number):void
 		{
-			trace("pixelsPerMS = ", pixelsPerMS);
 			if(this._snapToPages)
 			{
+				//trace("pixel: ", pixelsPerMS);
 				//jx: 目前一定會進到這裏
 				const inchesPerSecond:Number = 1000 * pixelsPerMS / Capabilities.screenDPI;
 				if(inchesPerSecond > MINIMUM_PAGE_VELOCITY)
@@ -2014,15 +2043,20 @@ package org.josht.starling.foxhole.controls
 				{
 					snappedPageHorizontalScrollPosition = roundToNearest(this._horizontalScrollPosition, this.actualWidth);
 				}
+				
 				//jx: 要用 maxHSP getter, 有反相
 				//snappedPageHorizontalScrollPosition = Math.max(0, Math.min(this._maxHorizontalScrollPosition, snappedPageHorizontalScrollPosition));
 				var min:Number = isRTL ?
 											Math.max(this.maxHorizontalScrollPosition, snappedPageHorizontalScrollPosition):
 											Math.max(0, Math.min(this.maxHorizontalScrollPosition, snappedPageHorizontalScrollPosition) );
 				snappedPageHorizontalScrollPosition = min;
+				
+				//trace("\t自然捲 - 跑完剩下距離以到下一頁 >hsp: ", snappedPageHorizontalScrollPosition);
 				this.throwTo(snappedPageHorizontalScrollPosition, NaN, this._pageThrowDuration);
+				//trace("\t自然捲 - 跑完了 >hsp: ", _horizontalScrollPosition );
+
 				this._horizontalPageIndex = Math.round(snappedPageHorizontalScrollPosition / this.actualWidth);
-				trace("a 更新 hPageIndex: ", _horizontalPageIndex );
+				//trace("a 更新 hPageIndex: ", _horizontalPageIndex );
 				return;
 			}
 
@@ -2240,11 +2274,11 @@ package org.josht.starling.foxhole.controls
 				return;
 			}
 			
-			if( "blockWrite" in parent && parent["blockWrite"] == true )
-			{
-				trace("\n\nscroller::viewPort_onResize 因 list block 而停止");
-				return;
-			}
+//			if( "blockWrite" in parent && parent["blockWrite"] == true )
+//			{
+//				trace("\n\nscroller::viewPort_onResize 因 list block 而停止");
+//				return;
+//			}
 			
 			//jxnote
 			//trace("\n\nviewPort_onResize 跑了 >hsp: ", _horizontalScrollPosition );
@@ -2252,7 +2286,6 @@ package org.josht.starling.foxhole.controls
 			{
 				if(this._velocityX > 0)
 				{
-					trace("a");
 					var difference:Number = viewPort.width - this._lastViewPortWidth;
 					//jx: rtl 時，collection.addItem() 不斷加資料，如果此時又在拖拉，會造成頁面亂跳
 					//推測: 可能是因為 RTL 時，第一頁的寬正好 300，造成多出一頁？→是因為 measure viewPort 時因為 RTL 而造成判斷多一頁？
@@ -2276,18 +2309,16 @@ package org.josht.starling.foxhole.controls
 			{
 				if(this._horizontalAutoScrollTween)
 				{
-					trace("b");
 					var initialScrollPosition:Number = this._horizontalAutoScrollTween.getInitValue("horizontalScrollPosition");
 					var targetScrollPosition:Number = this._horizontalAutoScrollTween.getValue("horizontalScrollPosition");
 					if(initialScrollPosition > targetScrollPosition)
 					{
-					trace("c");
 						difference = viewPort.width - this._lastViewPortWidth;
 						
 						//jx - 重要，原理跟上面一樣
 						if( isRTL && difference == this.width )
 						{
-							trace("目前 hack 是先將 diff 值給 reset 掉");
+							//trace("目前 hack 是先將 diff 值給 reset 掉");
 							difference = 0;	//TODO: 目前 hack 是先將 diff 值給 reset 掉
 						}
 						//jx-end--------------------------------
@@ -2323,6 +2354,7 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function horizontalAutoScrollTween_onComplete(tween:GTween):void
 		{
+			trace("\ttween 結束時 >hsp: ", _horizontalScrollPosition );
 			this._horizontalAutoScrollTween = null;
 			this.finishScrollingHorizontally();
 		}
@@ -2580,7 +2612,7 @@ package org.josht.starling.foxhole.controls
 				//jx: 手指輕緩拖移後放開，讓捲動自然停止，或手指大力一揮，要自動翻整頁，兩者都會借助 throw() 去捲到定位 
 				if(!isFinishingHorizontally && this._isDraggingHorizontally)
 				{
-//					trace("自然捲");
+					//trace("自然捲");
 					//take the average for more accuracy
 					var sum:Number = this._velocityX * 2.33;
 					var velocityCount:int = this._previousVelocityX.length;

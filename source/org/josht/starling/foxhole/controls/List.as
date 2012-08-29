@@ -1169,7 +1169,6 @@ package org.josht.starling.foxhole.controls
 			this._verticalScrollPosition = this.scroller.verticalScrollPosition;
 			this.invalidate(INVALIDATION_FLAG_SCROLL);
 			this._onScroll.dispatch(this);
-		this.name
 		}
 		/**
 		 * @private
