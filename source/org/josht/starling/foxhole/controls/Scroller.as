@@ -632,18 +632,12 @@ package org.josht.starling.foxhole.controls
 		{
 			return this._horizontalScrollPosition;
 		}
-		var old = -1;
+
 		/**
 		 * @private
 		 */
 		public function set horizontalScrollPosition(value:Number):void
 		{
-//			trace(value);
-//			if( value == -600)
-//				old = -600;
-//			
-//			if( old!= -1 && value != old )
-//				trace("");
 			if(this._horizontalScrollPosition == value)
 			{
 				return;

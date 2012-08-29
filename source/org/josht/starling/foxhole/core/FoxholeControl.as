@@ -27,14 +27,15 @@ package org.josht.starling.foxhole.core
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
-
+	
 	import org.josht.starling.display.Sprite;
 	import org.josht.starling.foxhole.controls.text.BitmapFontTextRenderer;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.DisplayObject;
 	import starling.events.Event;
+	import starling.utils.MatrixUtil;
 	import starling.utils.transformCoords;
 
 	/**
@@ -566,26 +567,26 @@ package org.josht.starling.foxhole.core
 			else
 			{
 				this.getTransformationMatrix(targetSpace, helperMatrix);
-
-				transformCoords(helperMatrix, 0, 0, helperPoint);
+				
+				MatrixUtil.transformCoords(helperMatrix, 0, 0, helperPoint);
 				minX = minX < helperPoint.x ? minX : helperPoint.x;
 				maxX = maxX > helperPoint.x ? maxX : helperPoint.x;
 				minY = minY < helperPoint.y ? minY : helperPoint.y;
 				maxY = maxY > helperPoint.y ? maxY : helperPoint.y;
 
-				transformCoords(helperMatrix, 0, this.actualHeight, helperPoint);
+				MatrixUtil.transformCoords(helperMatrix, 0, this.actualHeight, helperPoint);
 				minX = minX < helperPoint.x ? minX : helperPoint.x;
 				maxX = maxX > helperPoint.x ? maxX : helperPoint.x;
 				minY = minY < helperPoint.y ? minY : helperPoint.y;
 				maxY = maxY > helperPoint.y ? maxY : helperPoint.y;
 
-				transformCoords(helperMatrix, this.actualWidth, 0, helperPoint);
+				MatrixUtil.transformCoords(helperMatrix, this.actualWidth, 0, helperPoint);
 				minX = minX < helperPoint.x ? minX : helperPoint.x;
 				maxX = maxX > helperPoint.x ? maxX : helperPoint.x;
 				minY = minY < helperPoint.y ? minY : helperPoint.y;
 				maxY = maxY > helperPoint.y ? maxY : helperPoint.y;
 
-				transformCoords(helperMatrix, this.actualWidth, this.actualHeight, helperPoint);
+				MatrixUtil.transformCoords(helperMatrix, this.actualWidth, this.actualHeight, helperPoint);
 				minX = minX < helperPoint.x ? minX : helperPoint.x;
 				maxX = maxX > helperPoint.x ? maxX : helperPoint.x;
 				minY = minY < helperPoint.y ? minY : helperPoint.y;
