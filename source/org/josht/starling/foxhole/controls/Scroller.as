@@ -1633,11 +1633,12 @@ package org.josht.starling.foxhole.controls
 			{
 				if(this._touchPointID < 0 && !this._horizontalAutoScrollTween)
 				{
+					//jx: 考慮 RTL，因此要即時更新 left/right limits - 要考慮不是 snapToPages 的情況，因此放在 if() 之上
+					updateLimits();
+					//
 					if(this._snapToPages)
 					{
 						//trace("\told: ", _horizontalPageIndex, " >hsp: ", _horizontalScrollPosition )
-						//jx: 考慮 RTL，因此要即時更新 left/right limits
-						updateLimits();
 						this._horizontalScrollPosition = Math.max(leftLimit, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
 						//this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));	//original
 						this._horizontalPageIndex = Math.round(this._horizontalScrollPosition / this.actualWidth);
@@ -1853,7 +1854,7 @@ package org.josht.starling.foxhole.controls
 			const offset:Number = this._startTouchX - touchX;
 			var position:Number = this._startHorizontalScrollPosition + offset;
 			
-//			trace("\nstartHSP: ", _startHorizontalScrollPosition, " >offset: ", offset, " >Position: ", position );
+			trace("\nstartHSP: ", _startHorizontalScrollPosition, " >offset: ", offset, " >Position: ", position );
 			
 			//
 			updateLimits();
