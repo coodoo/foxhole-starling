@@ -1854,7 +1854,7 @@ package org.josht.starling.foxhole.controls
 			const offset:Number = this._startTouchX - touchX;
 			var position:Number = this._startHorizontalScrollPosition + offset;
 			
-			trace("\nstartHSP: ", _startHorizontalScrollPosition, " >offset: ", offset, " >Position: ", position );
+			//trace("\nstartHSP: ", _startHorizontalScrollPosition, " >offset: ", offset, " >Position: ", position );
 			
 			//
 			updateLimits();
@@ -2007,12 +2007,24 @@ package org.josht.starling.foxhole.controls
 				
 				//並且跳到原先指定位置
 				_horizontalScrollPosition = _horizontalAutoScrollTween.getValue( "horizontalScrollPosition");
-				trace("\tstopTweening::跳到預定位置 = ", _horizontalScrollPosition );
+				//trace("\tstopTweening::跳到預定位置 = ", _horizontalScrollPosition );
 				
 				//清掉動畫
 				_horizontalAutoScrollTween = null;
 			}
 		}
+		
+		/**
+		 * jxadded: 詢問是否正在進行 h tween
+		 */
+		public function isHScrolling():Boolean
+		{
+			return (_horizontalAutoScrollTween && _horizontalAutoScrollTween.paused == false);
+		}
+		
+		//jxadded
+		//oldHSP, newHSP
+		public var pageChangeSignal:Signal = new Signal( Number, Number );
 		
 		/**
 		 * @private
@@ -2021,6 +2033,9 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function throwHorizontally(pixelsPerMS:Number):void
 		{
+			//jxadded: 本次手指捲動沒造成換頁
+			var noChange:Boolean = false;
+			
 			if(this._snapToPages)
 			{
 				//trace("pixel: ", pixelsPerMS);
@@ -2036,6 +2051,8 @@ package org.josht.starling.foxhole.controls
 				}
 				else
 				{
+					//jxadded:沒換頁
+					noChange = true;
 					snappedPageHorizontalScrollPosition = roundToNearest(this._horizontalScrollPosition, this.actualWidth);
 				}
 				
@@ -2046,12 +2063,22 @@ package org.josht.starling.foxhole.controls
 											Math.max(0, Math.min(this.maxHorizontalScrollPosition, snappedPageHorizontalScrollPosition) );
 				snappedPageHorizontalScrollPosition = min;
 				
+				//trace("鬆手了 >snapHSP: ", snappedPageHorizontalScrollPosition, " >currentHSP: ", _horizontalScrollPosition ); 
+				
+				//jxadded: 鬆手後已知道換頁方向，立即廣播出去
+				//注意下面接著跑 throwTo() 會改變 _horizontalScrollPosition 值，因此先廣播
+				if( noChange == false )
+					pageChangeSignal.dispatch( _horizontalScrollPosition, snappedPageHorizontalScrollPosition )
+						
+						
 				//trace("\t自然捲 - 跑完剩下距離以到下一頁 >hsp: ", snappedPageHorizontalScrollPosition);
 				this.throwTo(snappedPageHorizontalScrollPosition, NaN, this._pageThrowDuration);
 				//trace("\t自然捲 - 跑完了 >hsp: ", _horizontalScrollPosition );
 
 				this._horizontalPageIndex = Math.round(snappedPageHorizontalScrollPosition / this.actualWidth);
 				//trace("a 更新 hPageIndex: ", _horizontalPageIndex );
+				
+						
 				return;
 			}
 
@@ -2292,6 +2319,7 @@ package org.josht.starling.foxhole.controls
 					//jx-end--------------------------------
 					this._startHorizontalScrollPosition += difference;
 					this._horizontalScrollPosition += difference;
+					//trace("a");
 				}
 				if(this._velocityY > 0)
 				{
@@ -2311,7 +2339,9 @@ package org.josht.starling.foxhole.controls
 						difference = viewPort.width - this._lastViewPortWidth;
 						
 						//jx - 重要，原理跟上面一樣
-						if( isRTL && difference == this.width )
+						//update: 後來發現 ltr 時往前翻也會造成跳回原頁，因此不論是否 rtl 都 reset dif ← 已確認改後不論RTL 皆可正常運行
+//						if( isRTL && difference == this.width )
+						if( difference == this.width )
 						{
 							//trace("目前 hack 是先將 diff 值給 reset 掉");
 							difference = 0;	//TODO: 目前 hack 是先將 diff 值給 reset 掉
@@ -2320,6 +2350,7 @@ package org.josht.starling.foxhole.controls
 						
 						var tweenPosition:Number = this._horizontalAutoScrollTween.position;
 						this._horizontalScrollPosition = initialScrollPosition + difference;
+//						trace("b");
 						this.throwTo(targetScrollPosition + difference, NaN,  this._horizontalAutoScrollTween.duration);
 						this._horizontalAutoScrollTween.position = tweenPosition;
 					}
@@ -2341,6 +2372,7 @@ package org.josht.starling.foxhole.controls
 			this._lastViewPortWidth = viewPort.width;
 			this._lastViewPortHeight = viewPort.height;
 			//trace("\t離開前 hsp: ", _horizontalScrollPosition );
+			//jxnote: 之後流程為 draw() → refreshMaxScrollPositions() 然後廣播 onScroll 事件
 			this.invalidate(INVALIDATION_FLAG_DATA);
 		}
 		
@@ -2349,7 +2381,7 @@ package org.josht.starling.foxhole.controls
 		 */
 		protected function horizontalAutoScrollTween_onComplete(tween:GTween):void
 		{
-			trace("\ttween 結束時 >hsp: ", _horizontalScrollPosition );
+			//trace("\ttween 結束時 >hsp: ", _horizontalScrollPosition );
 			this._horizontalAutoScrollTween = null;
 			this.finishScrollingHorizontally();
 		}

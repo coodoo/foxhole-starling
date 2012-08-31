@@ -663,8 +663,15 @@ package org.josht.starling.foxhole.controls.supportClasses
 				
 				//jxadded: 將 scroller.hsp 加大一頁，這個值下面也會被用於判斷最新可視的兩頁
 				owner.scroller._horizontalScrollPosition += owner.width * ( owner.isRTL ? -1 : 1);
-				//trace("\n\nViewPort::addItem 前面加頁 - 偷加大 _hsp 值 >hsp: ", owner.scroller._horizontalScrollPosition );
+//				trace("\n\nViewPort.addItem :: 前面加頁 - 偷加大 _hsp 值 >hsp: ", owner.scroller._horizontalScrollPosition );
 			}
+			else
+			{
+				//jxadded: 通知 scroller 這邊無聲加大了 _hsp 值
+				//owner.scroller.stopTweening();
+//				trace("\n\n\n插後面，目前 hsp: ", owner.scroller._horizontalScrollPosition, " this.hsp: ", this._horizontalScrollPosition );
+			}
+				
 			//jx:end---------------------------------------------------------------
 
 			this._layoutItems.length = this._dataProvider ? this._dataProvider.length : 0;
