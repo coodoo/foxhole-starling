@@ -159,10 +159,10 @@ package org.josht.starling.foxhole.core
 			{
 				if(target is FoxholeControl)
 				{
-					const foxholeControl:FoxholeControl = FoxholeControl(target);
+					const uiControl:FoxholeControl = FoxholeControl(target);
 					for(var name:String in nameTable)
 					{
-						if(foxholeControl.nameList.contains(name))
+						if(uiControl.nameList.contains(name))
 						{
 							initializer = nameTable[name] as Function;
 							if(initializer != null)
@@ -174,6 +174,7 @@ package org.josht.starling.foxhole.core
 					}
 				}
 			}
+
 			initializer = this._noNameTypeMap[type] as Function;
 			if(initializer != null)
 			{
@@ -183,10 +184,6 @@ package org.josht.starling.foxhole.core
 
 		protected function addObject(target:DisplayObject):void
 		{
-			
-//			if( target.hasOwnProperty("id") /*&&
-//				target["id"] == ""*/)
-//				trace( target["id"] );
 			const targetAsRequiredBaseClass:DisplayObject = DisplayObject(target as requiredBaseClass);
 			if(targetAsRequiredBaseClass)
 			{
@@ -213,8 +210,10 @@ package org.josht.starling.foxhole.core
 		 */
 		protected function addedHandler(event:Event):void
 		{
-			if( event.target.hasOwnProperty("id") )
-				trace("\tadded: ", event.target["id"]);
+			if( event.target.hasOwnProperty("id") && event.target["id"] == "FOOD" )
+				trace("");
+//				trace( evt.target["id"] );
+			trace( event.target );
 			this.addObject(event.target as DisplayObject);
 		}
 	}

@@ -27,16 +27,15 @@ package org.josht.starling.foxhole.controls
 	import flash.events.KeyboardEvent;
 	import flash.geom.Rectangle;
 	import flash.ui.Keyboard;
-	
+
 	import org.josht.starling.display.ScrollRectManager;
 	import org.josht.starling.foxhole.core.FoxholeControl;
 	import org.josht.starling.foxhole.core.PopUpManager;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-	
+
 	import starling.core.Starling;
 	import starling.display.DisplayObject;
-	import starling.display.Quad;
 	import starling.events.EnterFrameEvent;
 	import starling.events.Event;
 	import starling.events.Touch;
@@ -112,9 +111,37 @@ package org.josht.starling.foxhole.controls
 		protected static const callouts:Vector.<Callout> = new <Callout>[];
 
 		/**
+		 * The padding between a callout and the top edge of the stage when the
+		 * callout is positioned automatically. May be ignored if the callout
+		 * is too big for the stage.
+		 */
+		public static var stagePaddingTop:Number = 0;
+
+		/**
+		 * The padding between a callout and the right edge of the stage when the
+		 * callout is positioned automatically. May be ignored if the callout
+		 * is too big for the stage.
+		 */
+		public static var stagePaddingRight:Number = 0;
+
+		/**
+		 * The padding between a callout and the bottom edge of the stage when the
+		 * callout is positioned automatically. May be ignored if the callout
+		 * is too big for the stage.
+		 */
+		public static var stagePaddingBottom:Number = 0;
+
+		/**
+		 * The margin between a callout and the top edge of the stage when the
+		 * callout is positioned automatically. May be ignored if the callout
+		 * is too big for the stage.
+		 */
+		public static var stagePaddingLeft:Number = 0;
+
+		/**
 		 * Returns a new <code>Callout</code> instance when <code>Callout.show()</code>
-		 * is called. If one wishes to skin the callout manually, a custom
-		 * factory may be provided.
+		 * is called with isModal set to true. If one wishes to skin the callout
+		 * manually, a custom factory may be provided.
 		 *
 		 * <p>This function is expected to have the following signature:</p>
 		 *
@@ -123,27 +150,39 @@ package org.josht.starling.foxhole.controls
 		public static var calloutFactory:Function = defaultCalloutFactory;
 
 		/**
+		 * Returns an overlay to display with a callout that is modal.
+		 *
+		 * <p>This function is expected to have the following signature:</p>
+		 * <pre>function():DisplayObject</pre>
+		 *
+		 * @see org.josht.starling.foxhole.core.PopUpManager#overlayFactory
+		 */
+		public static var calloutOverlayFactory:Function = PopUpManager.defaultOverlayFactory;
+
+		/**
 		 * Creates a callout, and then positions and sizes it automatically
 		 * based on an origin rectangle and the specified direction relative to
 		 * the original. The provided width and height values are optional, and
 		 * these values may be ignored if the callout cannot be drawn at the
 		 * specified dimensions.
 		 */
-		public static function show(content:DisplayObject, origin:DisplayObject, direction:String = DIRECTION_ANY, width:Number = NaN, height:Number = NaN):Callout
+		public static function show(content:DisplayObject, origin:DisplayObject, direction:String = DIRECTION_ANY,
+			isModal:Boolean = true, customCalloutFactory:Function = null):Callout
 		{
-			const factory:Function = calloutFactory != null ? calloutFactory : defaultCalloutFactory;
+			if(!origin.stage)
+			{
+				throw new ArgumentError("Callout origin must be added to the stage.");
+			}
+			var factory:Function = customCalloutFactory;
+			if(factory == null)
+			{
+				factory = calloutFactory != null ? calloutFactory : defaultCalloutFactory;
+			}
 			const callout:Callout = factory();
 			callout.content = content;
-			if(!isNaN(width))
-			{
-				callout.width = width;
-			}
-			if(!isNaN(height))
-			{
-				callout.height = height;
-			}
 			callout._isPopUp = true;
-			PopUpManager.addPopUp(callout, true, false, calloutOverlayFactory);
+			const overlayFactory:Function = calloutOverlayFactory != null ? calloutOverlayFactory : PopUpManager.defaultOverlayFactory;
+			PopUpManager.addPopUp(callout, isModal, false, overlayFactory);
 
 			var globalBounds:Rectangle = ScrollRectManager.getBounds(origin, Starling.current.stage);
 			positionCalloutByDirection(callout, globalBounds, direction);
@@ -161,22 +200,28 @@ package org.josht.starling.foxhole.controls
 				helperRect = temp;
 				positionCalloutByDirection(callout, globalBounds, direction);
 			}
+			function origin_removedFromStageHandler(event:Event):void
+			{
+				callout.close();
+			}
 			function callout_onClose(callout:Callout):void
 			{
+				origin.removeEventListener(Event.REMOVED_FROM_STAGE, origin_removedFromStageHandler);
 				Starling.current.stage.removeEventListener(EnterFrameEvent.ENTER_FRAME, enterFrameHandler);
 				callout.onClose.remove(callout_onClose);
 			}
 			callout.addEventListener(EnterFrameEvent.ENTER_FRAME, enterFrameHandler);
 			callout.onClose.add(callout_onClose);
+			origin.addEventListener(Event.REMOVED_FROM_STAGE, origin_removedFromStageHandler);
 
 			return callout;
 		}
 
 		/**
-		 * @private
-		 * Creates a callout.
+		 * The default factory that creates callouts when <code>Callout.show()</code>
+		 * is called.
 		 */
-		protected static function defaultCalloutFactory():Callout
+		public static function defaultCalloutFactory():Callout
 		{
 			return new Callout();
 		}
@@ -205,7 +250,7 @@ package org.josht.starling.foxhole.controls
 			callout.arrowPosition = ARROW_POSITION_TOP;
 			callout.validate();
 			const downSpace:Number = (Starling.current.stage.stageHeight - callout.height) - (globalOrigin.y + globalOrigin.height);
-			if(downSpace >= 0)
+			if(downSpace >= stagePaddingBottom)
 			{
 				positionCalloutBelow(callout, globalOrigin);
 				return;
@@ -214,7 +259,7 @@ package org.josht.starling.foxhole.controls
 			callout.arrowPosition = ARROW_POSITION_BOTTOM;
 			callout.validate();
 			const upSpace:Number = globalOrigin.y - callout.height;
-			if(upSpace >= 0)
+			if(upSpace >= stagePaddingTop)
 			{
 				positionCalloutAbove(callout, globalOrigin);
 				return;
@@ -223,7 +268,7 @@ package org.josht.starling.foxhole.controls
 			callout.arrowPosition = ARROW_POSITION_LEFT;
 			callout.validate();
 			const rightSpace:Number = (Starling.current.stage.stageWidth - callout.width) - (globalOrigin.x + globalOrigin.width);
-			if(rightSpace >= 0)
+			if(rightSpace >= stagePaddingRight)
 			{
 				positionCalloutRightSide(callout, globalOrigin);
 				return;
@@ -232,7 +277,7 @@ package org.josht.starling.foxhole.controls
 			callout.arrowPosition = ARROW_POSITION_RIGHT;
 			callout.validate();
 			const leftSpace:Number = globalOrigin.x - callout.width;
-			if(leftSpace)
+			if(leftSpace >= stagePaddingLeft)
 			{
 				positionCalloutLeftSide(callout, globalOrigin);
 				return;
@@ -266,7 +311,7 @@ package org.josht.starling.foxhole.controls
 			callout.arrowPosition = ARROW_POSITION_TOP;
 			callout.validate();
 			const idealXPosition:Number = globalOrigin.x + (globalOrigin.width - callout.width) / 2;
-			const xPosition:Number = Math.max(0, Math.min(Starling.current.stage.stageWidth - callout.width, idealXPosition));
+			const xPosition:Number = Math.max(stagePaddingLeft, Math.min(Starling.current.stage.stageWidth - callout.width - stagePaddingRight, idealXPosition));
 			callout.x = xPosition;
 			callout.y = globalOrigin.y + globalOrigin.height;
 			callout.arrowOffset = idealXPosition - xPosition;
@@ -280,7 +325,7 @@ package org.josht.starling.foxhole.controls
 			callout.arrowPosition = ARROW_POSITION_BOTTOM;
 			callout.validate();
 			const idealXPosition:Number = globalOrigin.x + (globalOrigin.width - callout.width) / 2;
-			const xPosition:Number = Math.max(0, Math.min(Starling.current.stage.stageWidth - callout.width, idealXPosition));
+			const xPosition:Number = Math.max(stagePaddingLeft, Math.min(Starling.current.stage.stageWidth - callout.width - stagePaddingRight, idealXPosition));
 			callout.x = xPosition;
 			callout.y = globalOrigin.y - callout.height;
 			callout.arrowOffset = idealXPosition - xPosition;
@@ -295,7 +340,7 @@ package org.josht.starling.foxhole.controls
 			callout.validate();
 			callout.x = globalOrigin.x + globalOrigin.width;
 			const idealYPosition:Number = globalOrigin.y + (globalOrigin.height - callout.height) / 2;
-			const yPosition:Number = Math.max(0, Math.min(Starling.current.stage.stageHeight - callout.height, idealYPosition));
+			const yPosition:Number = Math.max(stagePaddingTop, Math.min(Starling.current.stage.stageHeight - callout.height - stagePaddingBottom, idealYPosition));
 			callout.y = yPosition;
 			callout.arrowOffset = idealYPosition - yPosition;
 		}
@@ -309,21 +354,10 @@ package org.josht.starling.foxhole.controls
 			callout.validate();
 			callout.x = globalOrigin.x - callout.width;
 			const idealYPosition:Number = globalOrigin.y + (globalOrigin.height - callout.height) / 2;
-			const yPosition:Number = Math.max(0, Math.min(Starling.current.stage.stageHeight - callout.height, idealYPosition));
+			const yPosition:Number = Math.max(stagePaddingLeft, Math.min(Starling.current.stage.stageHeight - callout.height - stagePaddingBottom, idealYPosition));
 			callout.y = yPosition;
 			callout.arrowOffset = idealYPosition - yPosition;
 		}
-
-		/**
-		 * @private
-		 */
-		protected static function calloutOverlayFactory():DisplayObject
-		{
-			const quad:Quad = new Quad(100, 100, 0xff00ff);
-			quad.alpha = 0;
-			return quad;
-		}
-
 
 		/**
 		 * Constructor.
@@ -1120,7 +1154,7 @@ package org.josht.starling.foxhole.controls
 			{
 				if(this._arrowPosition == ARROW_POSITION_LEFT)
 				{
-					this._leftArrowSkin.x = this._backgroundSkin.x - this._rightArrowSkin.width - this._leftArrowGap;
+					this._leftArrowSkin.x = this._backgroundSkin.x - this._leftArrowSkin.width - this._leftArrowGap;
 					this._leftArrowSkin.y = this._arrowOffset + this._backgroundSkin.y + (this._backgroundSkin.height - this._leftArrowSkin.height) / 2;
 					this._leftArrowSkin.y = Math.min(this._backgroundSkin.y + this._backgroundSkin.height - this._paddingBottom - this._leftArrowSkin.height, Math.max(this._backgroundSkin.y + this._paddingTop, this._leftArrowSkin.y));
 				}
