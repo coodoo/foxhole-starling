@@ -24,9 +24,12 @@
  */
 package org.josht.starling.foxhole.core
 {
+	import com.pubulous.utils.GlobalUtil;
+	
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.utils.setTimeout;
 	
 	import org.josht.starling.display.Sprite;
 	import org.josht.starling.foxhole.controls.text.BitmapFontTextRenderer;
@@ -36,8 +39,7 @@ package org.josht.starling.foxhole.core
 	import starling.display.DisplayObject;
 	import starling.events.Event;
 	import starling.utils.MatrixUtil;
-	import starling.utils.transformCoords;
-
+	
 	/**
 	 * Base class for all Foxhole UI controls. Implements invalidation and sets
 	 * up some basic template functions like <code>initialize()</code> and
@@ -45,6 +47,130 @@ package org.josht.starling.foxhole.core
 	 */
 	public class FoxholeControl extends Sprite
 	{
+		/**
+		 * jxadded
+		 * 這參數太常用到，直接放到 root element 比較好
+		 */
+		public const dpiScale:Number = GlobalUtil.dpiScale();
+		
+		/**
+		 * jxadded
+		 * 功能與 flex 一樣，每個元件要有獨一無二的名稱
+		 */
+		private static var cnt:int = 1;
+		public var id:String = "foxhole_" + cnt++ /*+ "_" + getTimer()*/;
+		
+		/**
+		 * jxadded: 當一個元件已跑過 initialize() 時，代表畫面上所有 sub-components 都已建立，就廣播事件
+		 */
+		public var onInitializedSignal:Signal = new Signal( FoxholeControl );
+		
+		//---------------------------------------------------------------
+		//
+		// 測: jx - percent width/height
+		
+		/**
+		 *  @private
+		 *  Storage for the percentWidth property.
+		 */
+		private var _percentWidth:Number;
+		
+		/**
+		 *  Specifies the width of a component as a percentage
+		 *  of its parent's size. Allowed values are 0-100. The default value is NaN.
+		 *  Setting the <code>width</code> or <code>explicitWidth</code> properties
+		 *  resets this property to NaN.
+		 *
+		 *  <p>This property returns a numeric value only if the property was
+		 *  previously set; it does not reflect the exact size of the component
+		 *  in percent.</p>
+		 *
+		 *  <p>This property is always set to NaN for the UITextField control.</p>
+		 * 
+		 *  <p>When used with Spark layouts, this property is used to calculate the
+		 *  width of the component's bounds after scaling and rotation. For example 
+		 *  if the component is rotated at 90 degrees, then specifying 
+		 *  <code>percentWidth</code> will affect the component's height.</p>
+		 *  
+		 */
+		public function get percentWidth():Number
+		{
+			return _percentWidth;
+		}
+
+		/**
+		 *  @private
+		 */
+		public function set percentWidth(value:Number):void
+		{
+			if (_percentWidth == value)
+				return;
+			
+			if (!isNaN(value))
+				explicitWidth = NaN;
+			
+			_percentWidth = value;
+			
+			//invalidateParentSizeAndDisplayList();
+		}
+		
+		//----------------------------------
+		//  percentHeight
+		//----------------------------------
+		
+		/**
+		 *  @private
+		 *  Storage for the percentHeight property.
+		 */
+		private var _percentHeight:Number;
+		
+		/**
+		 *  Specifies the height of a component as a percentage
+		 *  of its parent's size. Allowed values are 0-100. The default value is NaN.
+		 *  Setting the <code>height</code> or <code>explicitHeight</code> properties
+		 *  resets this property to NaN.
+		 *
+		 *  <p>This property returns a numeric value only if the property was
+		 *  previously set; it does not reflect the exact size of the component
+		 *  in percent.</p>
+		 *
+		 *  <p>This property is always set to NaN for the UITextField control.</p>
+		 *  
+		 *  <p>When used with Spark layouts, this property is used to calculate the
+		 *  height of the component's bounds after scaling and rotation. For example 
+		 *  if the component is rotated at 90 degrees, then specifying 
+		 *  <code>percentHeight</code> will affect the component's width.</p>
+		 *  
+		 *  @langversion 3.0
+		 *  @playerversion Flash 9
+		 *  @playerversion AIR 1.1
+		 *  @productversion Flex 3
+		 */
+		public function get percentHeight():Number
+		{
+			return _percentHeight;
+		}
+		
+		/**
+		 *  @private
+		 */
+		public function set percentHeight(value:Number):void
+		{
+			if (_percentHeight == value)
+				return;
+			
+			if (!isNaN(value))
+				explicitHeight = NaN;
+			
+			_percentHeight = value;
+			
+			//invalidateParentSizeAndDisplayList();
+		}
+		
+		// ↑ Sep 6, 2012
+		//---------------------------------------------------------------
+		
+		
 		/**
 		 * @private
 		 */
@@ -697,7 +823,18 @@ package org.josht.starling.foxhole.core
 			//然後 validate() → draw() 就啟動了新一輪的畫面更新
 			validationQueue.addControl(this, false);
 		}
-
+		
+		
+		/**
+		 * jxadded 
+		 */
+		public var onCreationComplete:Signal = new Signal(FoxholeControl);
+		
+		/**
+		 * jxadded
+		 */
+		public var creationCompleted:Boolean = false;
+		
 		/**
 		 * Immediately validates the control, which triggers a redraw, if one
 		 * is pending.
@@ -728,6 +865,13 @@ package org.josht.starling.foxhole.core
 				delete this._delayedInvalidationFlags[flag];
 			}
 			this._isValidating = false;
+			
+			//jx - 元件 addedToStage 後第一輪生命週期跑完了，可視為此元件已 creation complete
+			if( creationCompleted == false )
+			{
+				creationCompleted = true;
+				onCreationComplete.dispatch( this );
+			}
 		}
 
 		/**
@@ -870,7 +1014,14 @@ package org.josht.starling.foxhole.core
 			{
 				this.initialize();
 				this._isInitialized = true;
+				
+				//jxadded
+				onInitializedSignal.dispatch( this );
 			}
+			
+			//jxadded - 重要，foxhole 元件每次被加到畫面上時，就 *必然* 會重跑一次 invalidate 與其後的 draw() 等流程
+			//為了維持在生命週期第一次的 draw() 之後廣播 creationComplete 事件，因此每次都要 reset 這個值為 false
+			creationCompleted = false;
 			
 			//clear any flags that may have been set while we didn't have a
 			//stage (or when we had a stage previously).

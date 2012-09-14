@@ -174,7 +174,6 @@ package org.josht.starling.foxhole.core
 					}
 				}
 			}
-
 			initializer = this._noNameTypeMap[type] as Function;
 			if(initializer != null)
 			{
@@ -184,6 +183,10 @@ package org.josht.starling.foxhole.core
 
 		protected function addObject(target:DisplayObject):void
 		{
+			
+//			if( target.hasOwnProperty("id") /*&&
+//				target["id"] == ""*/)
+//				trace( target["id"] );
 			const targetAsRequiredBaseClass:DisplayObject = DisplayObject(target as requiredBaseClass);
 			if(targetAsRequiredBaseClass)
 			{
@@ -210,6 +213,8 @@ package org.josht.starling.foxhole.core
 		 */
 		protected function addedHandler(event:Event):void
 		{
+			if( event.target.hasOwnProperty("id") )
+				trace("\tadded: ", event.target["id"]);
 			this.addObject(event.target as DisplayObject);
 		}
 	}

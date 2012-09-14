@@ -25,7 +25,7 @@
 package org.josht.starling.foxhole.layout
 {
 	import org.osflash.signals.ISignal;
-
+	
 	import starling.display.DisplayObject;
 
 	/**
@@ -38,6 +38,18 @@ package org.josht.starling.foxhole.layout
 		 * redraw is probably needed.
 		 */
 		function get onLayoutChange():ISignal;
+		
+		//jxadded
+		function set paddingLeft( value:Number ):void;
+		function get paddingLeft():Number;
+		function set paddingRight( value:Number ):void;
+		function get paddingRight():Number;
+		function set paddingTop( value:Number ):void;
+		function get paddingTop():Number;
+		function set paddingBottom( value:Number ):void;
+		function get paddingBottom():Number;
+		function set gap( value:Number ):void;
+		function get gap():Number;
 
 		/**
 		 * Positions (and possibly resizes) the supplied items within the

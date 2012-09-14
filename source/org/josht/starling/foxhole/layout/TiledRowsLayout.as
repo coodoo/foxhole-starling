@@ -560,6 +560,7 @@ package org.josht.starling.foxhole.layout
 					tileHeight = this._useSquareTiles ? Math.max(tileWidth, tileHeight) : Math.max(tileHeight, item.height);
 				}
 			}
+			trace("tileH= ", tileHeight );
 			var availableWidth:Number = NaN;
 			var availableHeight:Number = NaN;
 

@@ -25,13 +25,13 @@
 package org.josht.starling.foxhole.controls.supportClasses
 {
 	import flash.geom.Point;
-
+	
 	import org.josht.starling.foxhole.core.FoxholeControl;
 	import org.josht.starling.foxhole.layout.ILayout;
 	import org.josht.starling.foxhole.layout.IVirtualLayout;
 	import org.josht.starling.foxhole.layout.LayoutBoundsResult;
 	import org.josht.starling.foxhole.layout.ViewPortBounds;
-
+	
 	import starling.display.DisplayObject;
 	import starling.events.Event;
 

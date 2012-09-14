@@ -31,7 +31,7 @@ package org.josht.starling.foxhole.controls
 	import org.josht.starling.foxhole.layout.IVirtualLayout;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.DisplayObject;
 
 	/**
@@ -39,6 +39,22 @@ package org.josht.starling.foxhole.controls
 	 */
 	public class ScrollContainer extends FoxholeControl
 	{
+		
+		//---------------------------------------------------------------
+		//
+		// 測: 實作 Group 需要的 api
+		
+		/**
+		 * 加 skin 時要避開 ScrollContainer 內部覆寫過的 addChildAt()，不然會被加到 viewPort 內
+		 */
+		protected function internalAddChildAt(child:DisplayObject, index:int):DisplayObject
+		{
+			return super.addChildAt( child, index );
+		}
+		
+		// ↑ Sep 6, 2012
+		//---------------------------------------------------------------
+		
 		/**
 		 * The default value added to the <code>nameList</code> of the scroller.
 		 */
@@ -368,7 +384,9 @@ package org.josht.starling.foxhole.controls
 				this.scroller.viewPort = this.viewPort;
 				this.scroller.nameList.add(this.scrollerName);
 				this.scroller.onScroll.add(scroller_onScroll);
-				super.addChildAt(this.scroller, 0);
+				//jx: 0 要留給 skin
+				//super.addChildAt(this.scroller, 0);
+				super.addChildAt( this.scroller, super.numChildren );
 			}
 		}
 

@@ -340,7 +340,7 @@ package org.josht.starling.foxhole.controls.text
 		{
 			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
 			const dataInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_DATA);
-
+			
 			if(dataInvalid)
 			{
 				if(this._isHTML)

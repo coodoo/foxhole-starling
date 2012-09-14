@@ -571,7 +571,7 @@ package org.josht.starling.foxhole.controls
 			if(this.inactiveTabs.length == 0)
 			{
 				var tab:Button = this._tabFactory();
-				tab.nameList.add(this.tabName);
+				tab.nameList.add(this.tabName);	//jxnote: 這裏為每個 tab 賦與一個 name，將來在 AzureTheme 裏會依此名稱識別套上樣式
 				tab.isToggle = true;
 				this.toggleGroup.addItem(tab);
 				this.addChild(tab);
