@@ -47,6 +47,9 @@ package org.josht.starling.foxhole.controls
 	 */
 	public class Slider extends FoxholeControl
 	{
+		//---------------------------------------------------------------
+		//
+		// jx-added 
 		
 		/**
 		 * jxadded
@@ -57,6 +60,36 @@ package org.josht.starling.foxhole.controls
 			_value = val;
 			invalidate(FoxholeControl.INVALIDATION_FLAG_DATA);
 		}
+		
+		/**
+		 * 
+		 */
+		private var _isRTL:Boolean = false;
+		
+		/**
+		 * 
+		 */
+		public function get isRTL():Boolean
+		{
+			return _isRTL;
+		}
+		
+		public function set isRTL(value:Boolean):void
+		{
+			if( _isRTL == value )
+				return;
+			
+			_isRTL = value;
+			
+			//隨便設一個 invalidate flag 下一輪，並立即觸發更新
+			invalidate( INVALIDATION_FLAG_DATA );
+			validate();
+		}
+		
+		// ↑ Sep 15, 2012
+		//---------------------------------------------------------------
+		
+		
 		
 		
 		/**
@@ -729,7 +762,16 @@ package org.josht.starling.foxhole.controls
 			if(dataInvalid || stylesInvalid || sizeInvalid)
 			{
 				this.layout();
+				
+				//jxadded
+				if( isRTL )
+				{
+					//trace("x = ", this.x);
+					this.scaleX = -1;
+					this.x = width+30;
+				}
 			}
+			
 		}
 
 		/**
