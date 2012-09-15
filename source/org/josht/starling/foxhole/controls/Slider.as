@@ -26,14 +26,14 @@ package org.josht.starling.foxhole.controls
 {
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
-
+	
 	import org.josht.starling.foxhole.core.FoxholeControl;
 	import org.josht.starling.foxhole.core.PropertyProxy;
 	import org.josht.utils.math.clamp;
 	import org.josht.utils.math.roundToNearest;
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.DisplayObject;
 	import starling.events.Event;
 	import starling.events.Touch;
@@ -47,6 +47,18 @@ package org.josht.starling.foxhole.controls
 	 */
 	public class Slider extends FoxholeControl
 	{
+		
+		/**
+		 * jxadded
+		 * 希望透過程式進行的 value 更新，不要誤觸 thumb 上方的 tooltip
+		 */
+		public function silentUpdate( val:Number ):void
+		{
+			_value = val;
+			invalidate(FoxholeControl.INVALIDATION_FLAG_DATA);
+		}
+		
+		
 		/**
 		 * @private
 		 */
@@ -159,7 +171,8 @@ package org.josht.starling.foxhole.controls
 		/**
 		 * @private
 		 */
-		protected var thumb:Button;
+		//jx: 改成 public
+		public var thumb:Button;
 		
 		/**
 		 * @private
@@ -234,6 +247,7 @@ package org.josht.starling.foxhole.controls
 		 * @private
 		 */
 		protected var _value:Number = 0;
+		
 		
 		/**
 		 * The value of the slider, between the minimum and maximum.

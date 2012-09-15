@@ -27,7 +27,7 @@ package org.josht.starling.foxhole.core
 	import flash.utils.Dictionary;
 	import flash.utils.describeType;
 	import flash.utils.getDefinitionByName;
-
+	
 	import starling.display.DisplayObject;
 	import starling.display.DisplayObjectContainer;
 	import starling.events.Event;
@@ -210,10 +210,9 @@ package org.josht.starling.foxhole.core
 		 */
 		protected function addedHandler(event:Event):void
 		{
-			if( event.target.hasOwnProperty("id") && event.target["id"] == "FOOD" )
-				trace("");
+			//jx
+//			if( event.target.hasOwnProperty("id") && event.target["id"] == "FOOD" )
 //				trace( evt.target["id"] );
-			trace( event.target );
 			this.addObject(event.target as DisplayObject);
 		}
 	}

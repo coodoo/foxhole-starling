@@ -228,8 +228,9 @@ package org.josht.starling.foxhole.controls
 
 		/**
 		 * @private
+		 * jx: 改成 public
 		 */
-		protected static function positionCalloutByDirection(callout:Callout, globalOrigin:Rectangle, direction:String):void
+		public static function positionCalloutByDirection(callout:Callout, globalOrigin:Rectangle, direction:String):void
 		{
 			if(DIRECTION_TO_FUNCTION.hasOwnProperty(direction))
 			{
@@ -990,6 +991,16 @@ package org.josht.starling.foxhole.controls
 			this.stage.addEventListener(TouchEvent.TOUCH, stage_touchHandler);
 			Starling.current.nativeStage.addEventListener(KeyboardEvent.KEY_DOWN, stage_keyDownHandler, false, int.MAX_VALUE, true);
 			this.addEventListener(Event.REMOVED_FROM_STAGE, removedFromStageHandler);
+		}
+		
+		/**
+		 * jxadded
+		 * calloutTooltip 不希望每次更新時重建，因此保留 instance 重覆用
+		 * 但它上次 close() 時，會順便解掉偵聽，因此 reuse 時要再掛上所有偵聽
+		 */
+		public function reInitialize():void
+		{
+			this.initialize();
 		}
 
 		/**
