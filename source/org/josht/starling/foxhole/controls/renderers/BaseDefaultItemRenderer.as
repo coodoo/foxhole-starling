@@ -1062,6 +1062,7 @@ package org.josht.starling.foxhole.controls.renderers
 			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
 			if(dataInvalid)
 			{
+				//jxnote: 跟 TextfieldTextRenderer 一樣，灌入新資料交由 commit() 做
 				this.commitData();
 			}
 			if(dataInvalid || stylesInvalid)
@@ -1073,6 +1074,9 @@ package org.josht.starling.foxhole.controls.renderers
 
 		/**
 		 * @private
+		 * 
+		 * jxnote: 由於 BaseListItemRenderer 內的 子元件 較多，
+		 * 所佔空間大小也不同，因此必需 override 這支 method 來提供客製化度量結果，這是合理的
 		 */
 		override protected function autoSizeIfNeeded():Boolean
 		{
@@ -1173,8 +1177,13 @@ package org.josht.starling.foxhole.controls.renderers
 		{
 			if(this._owner)
 			{
+				//取得 label 資料
 				this._label = this.itemToLabel(this._data);
+				
+				//取得 icon 資料
 				this.defaultIcon = this.itemToIcon(this._data);
+				
+				//jxnote: 這句探詢是否有指定 accessory 資料
 				const newAccessory:DisplayObject = this.itemToAccessory(this._data);
 				if(newAccessory != this.accessory)
 				{

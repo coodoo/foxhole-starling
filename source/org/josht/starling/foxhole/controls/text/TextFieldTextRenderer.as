@@ -42,6 +42,7 @@ package org.josht.starling.foxhole.controls.text
 	import starling.core.Starling;
 	import starling.display.Image;
 	import starling.events.Event;
+	import starling.textures.ConcreteTexture;
 	import starling.textures.Texture;
 
 	/**
@@ -274,6 +275,8 @@ package org.josht.starling.foxhole.controls.text
 		 * @inheritDoc
 		 * 
 		 * jx: 重要 - 人工觸發此元件度量文字寬度，做為外層元件擺放元件用
+		 * 這段流程跟此元件內部的 draw() 其實一樣，都是先 commit() 再 measure()
+		 * 差別在於這支 method 是 public，要讓外界呼叫以立即取得文字元件的 w, h，好方便其它元件做排版
 		 */
 		public function measureText(result:Point = null):Point
 		{
@@ -321,20 +324,27 @@ package org.josht.starling.foxhole.controls.text
 
 		/**
 		 * @private
+		 * 
+		 * jx: 文字元件的 draw() 程序比較複雜
 		 */
 		override protected function draw():void
 		{
 			var sizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SIZE);
-
+			
+			//1. 先套用新的文字串與 format
 			this.commit();
-
+			
+			//2. 度量本身寬、高
 			sizeInvalid = this.autoSizeIfNeeded() || sizeInvalid;
-
+			
+			//3. 真的排版元件位置
 			this.layout(sizeInvalid);
 		}
 
 		/**
 		 * @private
+		 * 
+		 * jx: commit() 是將新的字串與format 放入文字元件
 		 */
 		protected function commit():void
 		{
@@ -366,6 +376,7 @@ package org.josht.starling.foxhole.controls.text
 
 		/**
 		 * @private
+		 * jx: 重要 - 這是在 foxhole 體系裏比較少見到的「度量自身尺吋」的功能
 		 */
 		protected function measure(result:Point = null):Point
 		{
@@ -378,11 +389,14 @@ package org.josht.starling.foxhole.controls.text
 			const needsHeight:Boolean = isNaN(this.explicitHeight);
 
 			this._textField.autoSize = TextFieldAutoSize.LEFT;
-			this._textField.wordWrap = false;
+			//有趣，量寬度前，先將 wrap 關掉，這樣第一行字會無限延展
+			//這就是為何它可以正確且自動的設定文字元件寬度的原因
+			this._textField.wordWrap = false;		
 
 			var newWidth:Number = this.explicitWidth;
 			if(needsWidth)
 			{
+				//如果有明確指定 minWidth, maxWidth，它會考慮進去，不然就完全依 textField.width 為主
 				newWidth = Math.max(this._minWidth, Math.min(this._maxWidth, this._textField.width + 1));
 			}
 
@@ -412,13 +426,21 @@ package org.josht.starling.foxhole.controls.text
 
 			if(sizeInvalid)
 			{
-				this._textField.width = this.actualWidth;
+				this._textField.width = this.actualWidth;	//前面 measure() 完叫 setSizeInternal() 後會設定 actualWidth
 				this._textField.height = this.actualHeight;
 			}
 
 			if(stylesInvalid || dataInvalid || sizeInvalid)
 			{
-				this.refreshSnapshot(this._text && (sizeInvalid || !this._textSnapshotBitmapData));
+				const hasText:Boolean = this._text.length > 0;
+				if(hasText)
+				{
+					this.refreshSnapshot(sizeInvalid || !this._textSnapshotBitmapData);
+				}
+				if(this._textSnapshot)
+				{
+					this._textSnapshot.visible = hasText;
+				}
 			}
 		}
 
@@ -481,6 +503,8 @@ package org.josht.starling.foxhole.controls.text
 					this._textSnapshot.texture.dispose();
 					this._textSnapshot.texture = starling.textures.Texture.fromBitmapData(this._textSnapshotBitmapData, false, false, Starling.contentScaleFactor);
 					this._textSnapshot.readjustSize();
+					
+					//TODO: josh 加了檢查，可能不用了 - 準備移除
 					//jx: img 可能早先被從畫面上移除，要加回去
 					if( this._textSnapshot.stage == null )
 						addChild( this._textSnapshot );
@@ -489,7 +513,12 @@ package org.josht.starling.foxhole.controls.text
 				{
 					//this is faster, so use it if we haven't resized the
 					//bitmapdata
-					flash.display3D.textures.Texture(this._textSnapshot.texture.base).uploadFromBitmapData(this._textSnapshotBitmapData);
+					const texture:starling.textures.Texture = this._textSnapshot.texture;
+					if(Starling.handleLostContext && texture is ConcreteTexture)
+					{
+						ConcreteTexture(texture).restoreOnLostContext(this._textSnapshotBitmapData);
+					}
+					flash.display3D.textures.Texture(texture.base).uploadFromBitmapData(this._textSnapshotBitmapData);
 				}
 			}
 		}
@@ -511,6 +540,7 @@ package org.josht.starling.foxhole.controls.text
 				//when the renderer is added to stage again.
 				this._textSnapshot.texture.dispose();
 				this.removeChild(this._textSnapshot, true);
+				this._textSnapshot = null;
 			}
 		}
 	}

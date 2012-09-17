@@ -2051,6 +2051,8 @@ package org.josht.starling.foxhole.controls
 		
 		/**
 		 * @private
+		 * 
+		 * jxnote: 按鈕裏所有 子元件 都是這裏負責擺盤
 		 */
 		protected function layoutContent():void
 		{

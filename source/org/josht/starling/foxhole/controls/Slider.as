@@ -766,13 +766,28 @@ package org.josht.starling.foxhole.controls
 				//jxadded
 				if( isRTL )
 				{
-					//trace("x = ", this.x);
+					if( isNaN(originalX) )
+						originalX = this.x;
+					
 					this.scaleX = -1;
-					this.x = width+30;
+					this.x = width + originalX;
+				}
+				else
+				{
+					this.scaleX = 1;
+					
+					if( !isNaN(originalX) )
+					{
+						this.x = originalX;
+						originalX = NaN;						
+					}
 				}
 			}
 			
 		}
+		
+		//jx
+		private var originalX:Number = NaN;
 
 		/**
 		 * @private
