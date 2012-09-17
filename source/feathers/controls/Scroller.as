@@ -37,7 +37,6 @@ package feathers.controls
 	import com.gskinner.motion.easing.Exponential;
 	import com.gskinner.motion.easing.Sine;
 	
-	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -60,6 +59,7 @@ package feathers.controls
 	
 	import starling.core.Starling;
 	import starling.display.DisplayObject;
+	import starling.events.Event;
 	import starling.events.Touch;
 	import starling.events.TouchEvent;
 	import starling.events.TouchPhase;
