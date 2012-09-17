@@ -1,12 +1,12 @@
-# Foxhole
+# Feathers
 
-Built on [Starling](http://gamua.com/starling/) for Adobe AIR and Flash Player, Foxhole consists of various UI controls designed for mobile, developed by [Josh Tynjala](http://twitter.com/joshtynjala). The author develops Foxhole to support real-world mobile applications that he develops--mostly games.
+Built on [Starling](http://gamua.com/starling/), the hardware accelerated 2D framework for Adobe AIR and Flash Player, Feathers offers a variety of robust user interface controls for apps and games. Developed by [Josh Tynjala](http://twitter.com/joshtynjala), Feathers was originally created to build UI for web and mobile games from [Bowler Hat Games](http://bowlerhatgames.com/).
 
-To get started, you might want to check out the [API Documentation](http://www.flashtoolbox.com/foxhole-starling/documentation/) and the [Foxhole for Starling Examples](https://github.com/joshtynjala/foxhole-starling-examples).
+To get started, you might want to check out the [API Documentation](http://feathersui.com/documentation/), the [Wiki](http://wiki.starling-framework.org/feathers/start) and the [Examples](http://feathersui.com/examples/).
 
 ## Available Components
 
-Foxhole includes the following UI controls (in alphabetical order):
+Feathers includes the following UI controls (in alphabetical order):
 
 ### Button
 A typical button control, with optional toggle support. Includes a label and an icon, both optional.
@@ -48,7 +48,7 @@ A header that displays a title along with a horizontal regions on the sides for 
 A state machine for menu systems. Uses events (or as3-signals) to trigger navigation between screens or to call functions. Includes very simple dependency injection.
 
 ### ScrollContainer
-A container that supports scrolling and custom layouts.
+A container that supports scrolling and custom layouts. Some of Foxhole's provided layouts include VerticalLayout, HorizontalLayout, TiledRowsLayout and TiledColumnsLayout.
 
 ### ScrollBar and SimpleScrollBar
 Horizontal or vertical scroll bar controls. The full version has a thumb, track, and step buttons like traditional desktop scroll bars. The simple version has a thumb and an invisible track more like mobile touch scroll bars..
@@ -69,23 +69,23 @@ A sliding on/off switch. A common alternative to a checkbox in mobile environmen
 
 The following external libraries are required. Other versions of the same library may work, but the version displayed below is the one currently recommended by the author.
 
-* [Starling](http://gamua.com/starling/) v1.2 RC (from Github)
+* [Starling](http://gamua.com/starling/) v1.2
 * [GTween](http://gskinner.com/libraries/gtween/) v2.01
 * [as3-signals](https://github.com/robertpenner/as3-signals) v0.9 BETA
 
 ## Quick Links
 
-* [Foxhole for Starling Examples](https://github.com/joshtynjala/foxhole-starling-examples)
-* [API Documentation](http://www.flashtoolbox.com/foxhole-starling/documentation/)
-* [Wiki](https://github.com/joshtynjala/foxhole-starling/wiki)
-* [Foxhole section on the Starling Forums](http://forum.starling-framework.org/forum/foxhole)
+* [API Documentation](http://feathersui.com/documentation/)
+* [Wiki](http://wiki.starling-framework.org/feathers/start)
+* [Examples](http://feathersui.com/examples/)
+* [Forum](http://forum.starling-framework.org/forum/feathers)
 
 ## Important Note
 
-The core architecture and non-private APIs of Foxhole for Starling are still under active design and development. Basically, for the time being, absolutely everything is subject to change, and updating to a new revision is often likely to result in broken content. If something breaks after you update to the latest revision, and you can't figure out the new way to do what you were doing before, please ask in the [Foxhole Sub-Forum](http://forum.starling-framework.org/forum/foxhole) over at the Starling Forums.
+The core architecture and non-private APIs of Feathers are still under active design and development. Basically, for the time being, absolutely everything is subject to change, and updating to a new revision can often result in compiler errors caused by modified APIs. If something breaks in your app after you update to the latest revision, and you can't figure out the new way to do what you were doing before, please ask in the [Feathers Forum](http://forum.starling-framework.org/forum/feathers) over at the Starling Forums.
 
 ## Tips
 
-* The components do not have default skins. However, feel free to try out one of the themes included with the [Foxhole for Starling Examples](https://github.com/joshtynjala/foxhole-starling-examples).
+* The components do not have default skins. However, feel free to try out one of the themes included with the [Feathers Examples](http://feathersui.com/examples/).
 
 * An Ant build script is included. Add a file called `sdk.local.properties` to override the location of the Flex SDK and `build.local.properties` to override the locations of the required third-party libraries.

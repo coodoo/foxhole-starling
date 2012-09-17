@@ -17,3 +17,5 @@ bin-release/
 .metadata/
 *.iml
 .idea/
+archive/
+*.lnk
