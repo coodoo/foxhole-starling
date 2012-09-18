@@ -1361,7 +1361,7 @@ package feathers.controls
 			{
 				FeathersControl(this.verticalScrollBar).validate();
 			}
-
+			
 			//even if fixed, we need to measure without them first
 			if(scrollInvalid || sizeInvalid || stylesInvalid || scrollBarInvalid || dataInvalid)
 			{
@@ -1374,7 +1374,7 @@ package feathers.controls
 			{
 				this.refreshViewPortBoundsWithFixedScrollBars();
 			}
-
+			
 			this._lastViewPortWidth = viewPort.width;
 			this._lastViewPortHeight = viewPort.height;
 
@@ -1644,11 +1644,24 @@ package feathers.controls
 			{
 				if(this._touchPointID < 0 && !this._horizontalAutoScrollTween)
 				{
+					
+					//jx: 考慮 RTL，因此要即時更新 left/right limits - 要考慮不是 snapToPages 的情況，因此放在 if() 之上
+					updateLimits();
+					
 					if(this._snapToPages)
 					{
-						this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
+						//trace("\told: ", _horizontalPageIndex, " >hsp: ", _horizontalScrollPosition )
+						this._horizontalScrollPosition = Math.max(leftLimit, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
+						//this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));	//original
+						//trace("\tnew: ", _horizontalPageIndex, " >hsp: ", _horizontalScrollPosition )
+						
+						//原來的
+						//this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
 					}
-					this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, 0, this._maxHorizontalScrollPosition);
+					
+					//jx: 為 rtl 而改
+					this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, leftLimit, this._maxHorizontalScrollPosition);
+					//this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, 0, this._maxHorizontalScrollPosition);
 				}
 				if(this._touchPointID < 0 && !this._verticalAutoScrollTween)
 				{
@@ -1675,41 +1688,47 @@ package feathers.controls
 			{
 				this._horizontalPageIndex = this._verticalPageIndex = 0;
 			}
-
+			
 			if(maximumPositionsChanged || isScrollInvalid)
 			{
-				if(this._touchPointID < 0 && !this._horizontalAutoScrollTween)
-				{
-					//jx: 考慮 RTL，因此要即時更新 left/right limits - 要考慮不是 snapToPages 的情況，因此放在 if() 之上
-					updateLimits();
-					//
-					if(this._snapToPages)
-					{
-						//trace("\told: ", _horizontalPageIndex, " >hsp: ", _horizontalScrollPosition )
-						this._horizontalScrollPosition = Math.max(leftLimit, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
-						//this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));	//original
-						this._horizontalPageIndex = Math.round(this._horizontalScrollPosition / this.actualWidth);
-//						trace("b 更新 hPageIndex: ", _horizontalPageIndex );
-						//trace("\tnew: ", _horizontalPageIndex, " >hsp: ", _horizontalScrollPosition )
-					}
-
-					//jx: 為 rtl 而改
-					this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, leftLimit, this._maxHorizontalScrollPosition);
-					//this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, 0, this._maxHorizontalScrollPosition);//original
-					
-					//trace("\tscroller 更新hsp/maxHSP >hsp: ", _horizontalScrollPosition, "\n\t\t>pageIndex:",_horizontalPageIndex, " >max: ", _maxHorizontalScrollPosition )
-				}
-				if(this._touchPointID < 0 && !this._verticalAutoScrollTween)
-				{
-					if(this._snapToPages)
-					{
-						this._verticalScrollPosition = Math.max(0, roundToNearest(this._verticalScrollPosition, this.actualHeight));
-						this._verticalPageIndex = Math.round(this._verticalScrollPosition / this.actualHeight);
-					}
-					this._verticalScrollPosition = clamp(this._verticalScrollPosition, 0, this._maxVerticalScrollPosition);
-				}
 				this._onScroll.dispatch(this);
 			}
+			
+			//這是原本我 patch 的位置，feathers 版裏位置有變，已改在上面
+//			if(maximumPositionsChanged || isScrollInvalid)
+//			{
+//				if(this._touchPointID < 0 && !this._horizontalAutoScrollTween)
+//				{
+//					//jx: 考慮 RTL，因此要即時更新 left/right limits - 要考慮不是 snapToPages 的情況，因此放在 if() 之上
+//					updateLimits();
+//					//
+//					if(this._snapToPages)
+//					{
+//						//trace("\told: ", _horizontalPageIndex, " >hsp: ", _horizontalScrollPosition )
+//						this._horizontalScrollPosition = Math.max(leftLimit, roundToNearest(this._horizontalScrollPosition, this.actualWidth));
+//						//this._horizontalScrollPosition = Math.max(0, roundToNearest(this._horizontalScrollPosition, this.actualWidth));	//original
+//						this._horizontalPageIndex = Math.round(this._horizontalScrollPosition / this.actualWidth);
+//						//trace("b 更新 hPageIndex: ", _horizontalPageIndex );
+//						//trace("\tnew: ", _horizontalPageIndex, " >hsp: ", _horizontalScrollPosition )
+//					}
+//
+//					//jx: 為 rtl 而改
+//					this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, leftLimit, this._maxHorizontalScrollPosition);
+//					//this._horizontalScrollPosition = clamp(this._horizontalScrollPosition, 0, this._maxHorizontalScrollPosition);//original
+//					
+//					//trace("\tscroller 更新hsp/maxHSP >hsp: ", _horizontalScrollPosition, "\n\t\t>pageIndex:",_horizontalPageIndex, " >max: ", _maxHorizontalScrollPosition )
+//				}
+//				if(this._touchPointID < 0 && !this._verticalAutoScrollTween)
+//				{
+//					if(this._snapToPages)
+//					{
+//						this._verticalScrollPosition = Math.max(0, roundToNearest(this._verticalScrollPosition, this.actualHeight));
+//						this._verticalPageIndex = Math.round(this._verticalScrollPosition / this.actualHeight);
+//					}
+//					this._verticalScrollPosition = clamp(this._verticalScrollPosition, 0, this._maxVerticalScrollPosition);
+//				}
+//				this._onScroll.dispatch(this);
+//			}
 		}
 
 		/**
@@ -2298,95 +2317,9 @@ package feathers.controls
 		/**
 		 * @private
 		 */
-		/*
-		//TODO: josh 大改 viewPort_onResize()，這段要留著跟新版比較
-		protected function viewPort_onResize(viewPort:FoxholeControl):void
-		{
-		if(this.ignoreViewPortResizing)
-		{
-		return;
-		}
 		
-		//			if( "blockWrite" in parent && parent["blockWrite"] == true )
-		//			{
-		//				trace("\n\nscroller::viewPort_onResize 因 list block 而停止");
-		//				return;
-		//			}
 		
-		//jxnote
-		//trace("\n\nviewPort_onResize 跑了 >hsp: ", _horizontalScrollPosition );
-		if(this._touchPointID >= 0)
-		{
-		if(this._velocityX > 0)
-		{
-		var difference:Number = viewPort.width - this._lastViewPortWidth;
-		//jx: rtl 時，collection.addItem() 不斷加資料，如果此時又在拖拉，會造成頁面亂跳
-		//推測: 可能是因為 RTL 時，第一頁的寬正好 300，造成多出一頁？→是因為 measure viewPort 時因為 RTL 而造成判斷多一頁？
-		//但無論如何，一旦加了這個，每次 addItem() 多出來的一頁 difference 就會被這裏吃掉設回為 0
-		if( isRTL && difference == this.width )
-		{
-		difference = 0;	//TODO: 目前 hack 是先將 diff 值給 reset 掉
-		}
-		//jx-end--------------------------------
-		this._startHorizontalScrollPosition += difference;
-		this._horizontalScrollPosition += difference;
-		//trace("a");
-		}
-		if(this._velocityY > 0)
-		{
-		difference = viewPort.height - this._lastViewPortHeight;
-		this._startVerticalScrollPosition += difference;
-		this._verticalScrollPosition += difference;
-		}
-		}
-		else
-		{
-		if(this._horizontalAutoScrollTween)
-		{
-		var initialScrollPosition:Number = this._horizontalAutoScrollTween.getInitValue("horizontalScrollPosition");
-		var targetScrollPosition:Number = this._horizontalAutoScrollTween.getValue("horizontalScrollPosition");
-		if(initialScrollPosition > targetScrollPosition)
-		{
-		difference = viewPort.width - this._lastViewPortWidth;
 		
-		//jx - 重要，原理跟上面一樣
-		//update: 後來發現 ltr 時往前翻也會造成跳回原頁，因此不論是否 rtl 都 reset dif ← 已確認改後不論RTL 皆可正常運行
-		//						if( isRTL && difference == this.width )
-		if( difference == this.width )
-		{
-		//trace("目前 hack 是先將 diff 值給 reset 掉");
-		difference = 0;	//TODO: 目前 hack 是先將 diff 值給 reset 掉
-		}
-		//jx-end--------------------------------
-		
-		var tweenPosition:Number = this._horizontalAutoScrollTween.position;
-		this._horizontalScrollPosition = initialScrollPosition + difference;
-		//						trace("b");
-		this.throwTo(targetScrollPosition + difference, NaN,  this._horizontalAutoScrollTween.duration);
-		this._horizontalAutoScrollTween.position = tweenPosition;
-		}
-		}
-		if(this._verticalAutoScrollTween)
-		{
-		initialScrollPosition = this._verticalAutoScrollTween.getInitValue("verticalScrollPosition");
-		targetScrollPosition = this._verticalAutoScrollTween.getValue("verticalScrollPosition");
-		if(initialScrollPosition > targetScrollPosition)
-		{
-		difference = viewPort.height - this._lastViewPortHeight;
-		tweenPosition = this._verticalAutoScrollTween.position;
-		this._verticalScrollPosition = initialScrollPosition + difference;
-		this.throwTo(NaN, targetScrollPosition + difference, this._verticalAutoScrollTween.duration);
-		this._verticalAutoScrollTween.position = tweenPosition;
-		}
-		}
-		}
-		this._lastViewPortWidth = viewPort.width;
-		this._lastViewPortHeight = viewPort.height;
-		//trace("\t離開前 hsp: ", _horizontalScrollPosition );
-		//jxnote: 之後流程為 draw() → refreshMaxScrollPositions() 然後廣播 onScroll 事件
-		this.invalidate(INVALIDATION_FLAG_DATA);
-		}
-		*/
 		
 		/**
 		 * @private
