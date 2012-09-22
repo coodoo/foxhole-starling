@@ -1736,7 +1736,7 @@ package feathers.controls
 		/**
 		 * @private
 		 */
-		protected var _onRelease:Signal = new Signal(Button);
+		protected var _onRelease:Signal = new Signal( Button );
 		
 		/**
 		 * Dispatched when the button is released while the touch is still
@@ -2322,7 +2322,7 @@ package feathers.controls
 						{
 							this.currentState = STATE_UP;
 						}
-						this._onRelease.dispatch(this);
+						this._onRelease.dispatch( this );
 						if(this._isToggle)
 						{
 							this.isSelected = !this._isSelected;

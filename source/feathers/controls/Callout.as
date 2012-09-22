@@ -155,11 +155,7 @@ package feathers.controls
 		 * <p>This function is expected to have the following signature:</p>
 		 * <pre>function():DisplayObject</pre>
 		 *
-<<<<<<< HEAD
-		 * @see org.josht.starling.foxhole.core.PopUpManager#overlayFactory
-=======
 		 * @see feathers.core.PopUpManager#overlayFactory
->>>>>>> feathers-pull
 		 */
 		public static var calloutOverlayFactory:Function = PopUpManager.defaultOverlayFactory;
 

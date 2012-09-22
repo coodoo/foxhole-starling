@@ -27,7 +27,7 @@ package feathers.display
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
-
+	
 	import starling.core.RenderSupport;
 	import starling.core.Starling;
 	import starling.display.DisplayObject;
@@ -47,12 +47,89 @@ package feathers.display
 		
 		/**
 		 * Constructor.
+		 * 
+		 * jx: 加上 textureScale 支援
 		 */
-		public function Image(texture:Texture)
+		public function Image(texture:Texture, _textureScale:Number = 1)
 		{
 			super(texture);
+			
+			//jxadded
+			this._textureScale = _textureScale;
+			readjustSize()
+		}
+		
+		//---------------------------------------------------------------
+		//
+		// 測: 加上支援 textureScale 功能，像 Scale3Image, Scale9Image 一樣
+		// 可做一張 320 大圖，自動縮小為 240, 160
+		
+		/**
+		 * jxadded
+		 * @private
+		 */
+		private var _textureScale:Number = 1;
+		
+		/**
+		 * jxadded
+		 * The amount to scale the texture. Useful for DPI changes.
+		 */
+		public function get textureScale():Number
+		{
+			return this._textureScale;
+		}
+		
+		//jxadded
+		private var _layoutChanged:Boolean;
+		
+		/**
+		 * jxadded
+		 * @private
+		 */
+		public function set textureScale(value:Number):void
+		{
+			if(this._textureScale == value)
+			{
+				return;
+			}
+			this._textureScale = value;
+			this._layoutChanged = true;
+			
+			//只要 scale 改變，就立即套用新的縮放值
+			readjustSize();
+		}
+		
+		/**
+		 * jxadded: 故意不 call super, 因為 logic 不同
+		 */
+		override public function readjustSize():void
+		{
+//			return;			
+			//trace("\n\nsuper 原本做的事 = ", _textureScale);
+			
+			//starling.Image.readjustSize() 原本做的事
+//			var frame:Rectangle = texture.frame;
+//			var width:Number  = frame ? frame.width  : texture.width;
+//			var height:Number = frame ? frame.height : texture.height;
+			
+			var frame:Rectangle = this.texture.frame;
+			this.width = frame ?  frame.width * this._textureScale : texture.width;
+			this.height = frame ? frame.height * this._textureScale : texture.height;
+			
+			mVertexData.setPosition(0, 0.0, 0.0);
+			mVertexData.setPosition(1, width, 0.0);
+			mVertexData.setPosition(2, 0.0, height);
+			mVertexData.setPosition(3, width, height); 
+			
+			onVertexDataChanged();
 		}
 
+		// ↑ Sep 22, 2012
+		//---------------------------------------------------------------
+		
+		
+		
+		
 		/**
 		 * @private
 		 */

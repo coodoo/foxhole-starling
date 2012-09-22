@@ -25,7 +25,7 @@
 package feathers.textures
 {
 	import flash.geom.Rectangle;
-
+	
 	import starling.textures.Texture;
 
 	/**
@@ -38,10 +38,11 @@ package feathers.textures
 		/**
 		 * Constructor.
 		 */
-		public function Scale9Textures(texture:Texture, scale9Grid:Rectangle)
+		public function Scale9Textures(texture:Texture, scale9Grid:Rectangle )
 		{
 			this._texture = texture;
 			this._scale9Grid = scale9Grid;
+			
 			this.initialize();
 		}
 
