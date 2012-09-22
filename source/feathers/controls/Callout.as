@@ -1168,6 +1168,11 @@ package feathers.controls
 		 */
 		protected function layout():void
 		{
+			//jxadded: 在 callout 上下邊線也發現模楜的情況，原本以為是 height 不是整數，
+			//後來發現似乎是因為 actualHeight = 457.9384 這種浮點數造成的，我加了 Math.round() 後就解決了。
+			this.actualWidth = Math.round( this.actualWidth );
+			this.actualHeight = Math.round( this.actualHeight );
+			
 			const xPosition:Number = (this._leftArrowSkin && this._arrowPosition == ARROW_POSITION_LEFT) ? this._leftArrowSkin.width + this._leftArrowGap : 0;
 			const yPosition:Number = (this._topArrowSkin &&  this._arrowPosition == ARROW_POSITION_TOP) ? this._topArrowSkin.height + this._topArrowGap : 0;
 			const widthOffset:Number = (this._rightArrowSkin && this._arrowPosition == ARROW_POSITION_RIGHT) ? this._rightArrowSkin.width + this._rightArrowGap : 0;
@@ -1211,6 +1216,9 @@ package feathers.controls
 				this._content.y = this._backgroundSkin.y + this._paddingTop;
 				this._content.width = this._backgroundSkin.width - this._paddingLeft - this._paddingRight;
 				this._content.height = this._backgroundSkin.height - this._paddingTop - this._paddingBottom;
+				
+				//debug
+				//this._backgroundSkin.height = this._backgroundSkin.height+1;
 			}
 		}
 

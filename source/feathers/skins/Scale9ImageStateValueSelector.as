@@ -36,10 +36,18 @@ package feathers.skins
 	{
 		/**
 		 * Constructor.
+		 * 
+		 * jxadded: 加入支援 textureScale
 		 */
-		public function Scale9ImageStateValueSelector()
+		public function Scale9ImageStateValueSelector( tScale:Number = 1 )
 		{
+			this.textureScale = tScale;
 		}
+		
+		/**
+		 * jxadded
+		 */
+		public var textureScale:Number = 1;
 
 		/**
 		 * @private
@@ -89,6 +97,7 @@ package feathers.skins
 				return null;
 			}
 
+			//jxnote: 這裏有機會 re-use Image 元件，而不是每次都建新的，手法不錯。
 			if(oldValue is Scale9Image)
 			{
 				var image:Scale9Image = Scale9Image(oldValue);
@@ -97,7 +106,8 @@ package feathers.skins
 			}
 			else
 			{
-				image = new Scale9Image(textures);
+				//jxadded: 加入支援 textureScale
+				image = new Scale9Image( textures, textureScale );
 			}
 
 			for(var propertyName:String in this._imageProperties)

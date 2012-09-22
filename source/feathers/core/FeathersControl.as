@@ -76,6 +76,55 @@ package feathers.core
 		private var _percentWidth:Number;
 		
 		/**
+		 * The final height value that should be used for layout. If the height
+		 * has been explicitly set, then that value is used. If not, the actual
+		 * height will be calculated automatically. Each component has different
+		 * automatic sizing behavior, but it's usually based on the component's
+		 * skin or content, including text or subcomponents.
+		 */
+		public function get actualHeight():Number
+		{
+			return _actualHeight;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set actualHeight(value:Number):void
+		{
+			if( _actualHeight == value )
+				return;
+			
+			//jxadded: 確保 actualWidth/Height 是整數，不然 skin 可能會楜掉
+			//如果造成問題，就拿掉 Math.round();
+			_actualHeight = Math.round( value );
+		}
+
+		/**
+		 * The final width value that should be used for layout. If the width
+		 * has been explicitly set, then that value is used. If not, the actual
+		 * width will be calculated automatically. Each component has different
+		 * automatic sizing behavior, but it's usually based on the component's
+		 * skin or content, including text or subcomponents.
+		 */
+		public function get actualWidth():Number
+		{
+			return _actualWidth;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set actualWidth(value:Number):void
+		{
+			if( _actualWidth == value )
+				return;
+			
+			//jxadded: 確保 actualWidth/Height 是整數，不然 skin 可能會楜掉
+			_actualWidth = Math.round( value );
+		}
+
+		/**
 		 *  Specifies the width of a component as a percentage
 		 *  of its parent's size. Allowed values are 0-100. The default value is NaN.
 		 *  Setting the <code>width</code> or <code>explicitWidth</code> properties
@@ -377,14 +426,7 @@ package feathers.core
 		 */
 		protected var explicitWidth:Number = NaN;
 
-		/**
-		 * The final width value that should be used for layout. If the width
-		 * has been explicitly set, then that value is used. If not, the actual
-		 * width will be calculated automatically. Each component has different
-		 * automatic sizing behavior, but it's usually based on the component's
-		 * skin or content, including text or subcomponents.
-		 */
-		protected var actualWidth:Number = 0;
+		protected var _actualWidth:Number = 0;
 
 		/**
 		 * The width of the component, in pixels. This could be a value that was
@@ -417,14 +459,7 @@ package feathers.core
 		 */
 		protected var explicitHeight:Number = NaN;
 
-		/**
-		 * The final height value that should be used for layout. If the height
-		 * has been explicitly set, then that value is used. If not, the actual
-		 * height will be calculated automatically. Each component has different
-		 * automatic sizing behavior, but it's usually based on the component's
-		 * skin or content, including text or subcomponents.
-		 */
-		protected var actualHeight:Number = 0;
+		protected var _actualHeight:Number = 0;
 
 		/**
 		 * The height of the component, in pixels. This could be a value that

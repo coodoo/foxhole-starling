@@ -24,8 +24,11 @@
  */
 package feathers.skins
 {
-	import starling.display.Image;
+	
 	import starling.textures.Texture;
+	
+	//jx: 要改用 Feathers.Image 才能支持 textureScale
+	import feathers.display.Image;
 
 	/**
 	 * Values for each state are Texture instances, and the manager attempts to
@@ -36,10 +39,18 @@ package feathers.skins
 	{
 		/**
 		 * Constructor.
+		 * 
+		 * jxadded: textureScale 支援
 		 */
-		public function ImageStateValueSelector()
+		public function ImageStateValueSelector( tScale:Number = 1 )
 		{
+			this.textureScale = tScale;
 		}
+		
+		/**
+		 * jxadded
+		 */
+		public var textureScale:Number = 1;
 
 		/**
 		 * @private
@@ -97,7 +108,8 @@ package feathers.skins
 			}
 			else
 			{
-				image = new Image(texture);
+				//jxadded
+				image = new Image( texture, textureScale );
 			}
 
 			for(var propertyName:String in this._imageProperties)
