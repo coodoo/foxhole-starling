@@ -34,13 +34,13 @@ package feathers.controls
 	import feathers.motion.GTween;
 	import feathers.system.DeviceCapabilities;
 	
-	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-	
-	import starling.events.Event;
-	import starling.events.Touch;
-	import starling.events.TouchEvent;
+	import org.osflash.signals.ISignal;
+	import starling.display.DisplayObject;
 	import starling.events.TouchPhase;
+	import starling.events.Event;
+	import starling.events.TouchEvent;
+	import starling.events.Touch;
 
 	/**
 	 * Similar to a light switch. May be selected or not, like a check box.
@@ -127,6 +127,7 @@ package feathers.controls
 			super();
 			this.addEventListener(TouchEvent.TOUCH, touchHandler);
 			this.addEventListener(Event.REMOVED_FROM_STAGE, removedFromStageHandler);
+			
 		}
 
 		/**
@@ -887,23 +888,58 @@ package feathers.controls
 				this.addChild(this.thumb);
 			}
 		}
+		
+		
+		//---------------------------------------------------------------
+		//
+		// 測: 用遮蓋法做出圓角
+		
+		private var _cornerAndShadowSkin:DisplayObject;
+		
+		public function set cornerAndShadowSkin( value:DisplayObject ):void
+		{
+			if(this._cornerAndShadowSkin == value)
+			{
+				return;
+			}
+			
+			if( this._cornerAndShadowSkin )
+			{
+				this.removeChild(this._cornerAndShadowSkin);
+			}
+			//
+			this._cornerAndShadowSkin = value;
+			this._cornerAndShadowSkin.touchable = false;	//不接受觸控反應
+			
+			if(this._cornerAndShadowSkin && this._cornerAndShadowSkin.parent != this)
+			{
+				//加到畫面上，將來到 draw() 時會確保它在最上層
+				this.addChild(this._cornerAndShadowSkin );
+			}
+			this.invalidate(INVALIDATION_FLAG_STYLES);
+		}
+		
+		// ↑ Sep 25, 2012
+		//---------------------------------------------------------------
+		
 
 		/**
 		 * @private
 		 */
 		override protected function draw():void
 		{
-			const dataInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_DATA);
-			const stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
+			var dataInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_DATA);
+			var stylesInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STYLES);
 			var sizeInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_SIZE);
-			const stateInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STATE);
-			const textRendererInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_TEXT_RENDERER);
+			var stateInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_STATE);
+			var textRendererInvalid:Boolean = this.isInvalid(INVALIDATION_FLAG_TEXT_RENDERER);
 
 			if(textRendererInvalid)
 			{
 				this.createLabels();
 			}
-
+			
+			//
 			this.createOrDestroyOffTrackIfNeeded();
 
 			if(stylesInvalid)
@@ -927,8 +963,20 @@ package feathers.controls
 
 			if(stylesInvalid || sizeInvalid || stateInvalid)
 			{
+				//jxadded: thumb 的大小也該由元件內部指定
+				this.thumb.width = this.actualHeight;		
+				this.thumb.height = thumb.width;
 				this.thumb.y = (this.actualHeight - this.thumb.height) / 2;
 				this.drawLabels();
+				
+				
+				//確保 cornerAndShadowSkin 在最上層
+				if( _cornerAndShadowSkin )
+				{
+					_cornerAndShadowSkin.width = actualWidth;
+					_cornerAndShadowSkin.height = actualHeight;
+					this.setChildIndex( _cornerAndShadowSkin, numChildren );
+				}
 			}
 
 			if(sizeInvalid || stylesInvalid || dataInvalid)
@@ -1029,6 +1077,7 @@ package feathers.controls
 		protected function updateSelection():void
 		{
 			var xPosition:Number = this._paddingLeft;
+
 			if(this._isSelected)
 			{
 				xPosition = this.actualWidth - this.thumb.width - this._paddingRight;
@@ -1043,6 +1092,10 @@ package feathers.controls
 
 			if(this._isSelectionChangedByUser)
 			{
+				
+				//jxadded - 動畫一開始跑，也要顯示兩個 track
+				onTrack.visible = offTrack.visible = true;
+				
 				this._selectionChangeTween = new GTween(this.thumb, 0.15,
 				{
 					x: xPosition
@@ -1055,6 +1108,9 @@ package feathers.controls
 			else
 			{
 				this.thumb.x = xPosition;
+				
+				//jxadded
+				toggleTrackVisible();
 			}
 			this._isSelectionChangedByUser = false;
 
@@ -1063,6 +1119,19 @@ package feathers.controls
 			//suddenly appear due to the way that flash changes alpha values
 			//of containers.
 			this.layout();
+			
+		}
+		
+		/**
+		 * jxadded
+		 * 
+		 * 注意：目前是專門針對 book reader 改寫，track mode 一定要是 scroll，不能是 single。
+		 */
+		private function toggleTrackVisible():void
+		{
+			//jxadded - 隱藏不需要的 track skin
+			onTrack.visible = isSelected;
+			offTrack.visible = !isSelected;
 		}
 
 		/**
@@ -1200,9 +1269,12 @@ package feathers.controls
 		{
 			const uiOnLabelRenderer:FeathersControl = FeathersControl(this.onTextRenderer);
 			const uiOffLabelRenderer:FeathersControl = FeathersControl(this.offTextRenderer);
+			
 			const maxLabelWidth:Number = Math.max(0, this.actualWidth - this.thumb.width - this._paddingLeft - this._paddingRight);
+			
 			var totalLabelHeight:Number = Math.max(uiOnLabelRenderer.height, uiOffLabelRenderer.height);
 			var labelHeight:Number;
+			
 			if(this._labelAlign == LABEL_ALIGN_MIDDLE)
 			{
 				labelHeight = totalLabelHeight;
@@ -1212,23 +1284,37 @@ package feathers.controls
 				labelHeight = Math.max(this.onTextRenderer.baseline, this.offTextRenderer.baseline);
 			}
 
+			//ON
 			var onScrollRect:Rectangle = uiOnLabelRenderer.scrollRect;
 			onScrollRect.width = maxLabelWidth;
 			onScrollRect.height = totalLabelHeight;
 			uiOnLabelRenderer.scrollRect = onScrollRect;
 
-			uiOnLabelRenderer.x = this._paddingLeft;
-			uiOnLabelRenderer.y = (this.actualHeight - labelHeight) / 2;
-
+			uiOnLabelRenderer.x = this._paddingLeft + 4//(this.actualWidth - this._paddingLeft - uiOnLabelRenderer.width)/2;
+			uiOnLabelRenderer.y = (this.actualHeight - uiOnLabelRenderer.height) / 2;
+			
+			//OFF
 			var offScrollRect:Rectangle = uiOffLabelRenderer.scrollRect;
-			offScrollRect.width = maxLabelWidth;
+			offScrollRect.width = maxLabelWidth - 9*dpiScale;	//magic - 320 時是 18
 			offScrollRect.height = totalLabelHeight;
+
 			uiOffLabelRenderer.scrollRect = offScrollRect;
 
-			uiOffLabelRenderer.x = this.actualWidth - this._paddingRight - maxLabelWidth;
-			uiOffLabelRenderer.y = (this.actualHeight - labelHeight) / 2;
+			//jxadded: 改寫 - off label 的置中與 mask 大小是在這裏決定
+			var a:Number = thumb.x + thumb.width;
+			var availWidth:Number = this.actualWidth - a;
+			
+			//jx: 這裏擺放文字元件的 x 位置
+			uiOffLabelRenderer.x = a + 7*dpiScale;	//14 是 mgaic, 從 ios psd 看來的值，目前無法得知它的置中公式
+			
+			//uiOffLabelRenderer.x = a + ( availWidth  - uiOffLabelRenderer.width)/2;	//jx 改過
+			//uiOffLabelRenderer.x = (this.actualWidth - this._paddingRight - uiOffLabelRenderer.width)/2 - 64;
+			//trace(" x: ", uiOffLabelRenderer.x, uiOffLabelRenderer.scrollRect.x, uiOffLabelRenderer.scrollRect.width );
+			
+			uiOffLabelRenderer.y = (this.actualHeight - uiOffLabelRenderer.height) / 2;
+			//uiOffLabelRenderer.y = (this.actualHeight - labelHeight) / 2;
 		}
-
+		
 		/**
 		 * @private
 		 */
@@ -1239,14 +1325,28 @@ package feathers.controls
 
 			const uiOnLabelRenderer:FeathersControl = FeathersControl(this.onTextRenderer);
 			const uiOffLabelRenderer:FeathersControl = FeathersControl(this.offTextRenderer);
+			
+			//更新 on/off 文字的移動
+			
+			//先處理 ON 文字
 			var currentScrollRect:Rectangle = uiOnLabelRenderer.scrollRect;
+			
 			currentScrollRect.x = maxLabelWidth - thumbOffset - (maxLabelWidth - uiOnLabelRenderer.width) / 2;
 			uiOnLabelRenderer.scrollRect = currentScrollRect;
-
+			
+			//再處理 OFF 文字
 			currentScrollRect = uiOffLabelRenderer.scrollRect;
-			currentScrollRect.x = -thumbOffset - (maxLabelWidth - uiOffLabelRenderer.width) / 2;
+			//currentScrollRect.x = -(thumb.x+thumb.width)//-thumbOffset - (maxLabelWidth - uiOffLabelRenderer.width) / 2;
+			
+			//DEBUG: 原本是這行
+			//currentScrollRect.x = -thumbOffset - (maxLabelWidth - uiOffLabelRenderer.width) / 2;
+			currentScrollRect.x = -thumb.x;
+			//trace("\nlayout 改 rect: ", currentScrollRect.x, currentScrollRect.width );
+			//currentScrollRect.width = actualWidth - (thumb.x + thumb.width);
+			
 			uiOffLabelRenderer.scrollRect = currentScrollRect;
 
+			//最後更新 track 狀態
 			if(this._trackLayoutMode == TRACK_LAYOUT_MODE_SCROLL)
 			{
 				this.layoutTrackWithScrollRect();
@@ -1293,39 +1393,60 @@ package feathers.controls
 		{
 			//we want to scale the skins to match the height of the slider,
 			//but we also want to keep the original aspect ratio.
-			const onTrackScaledWidth:Number = this.onTrackSkinOriginalWidth * this.actualHeight / this.onTrackSkinOriginalHeight;
-			const offTrackScaledWidth:Number = this.offTrackSkinOriginalWidth * this.actualHeight / this.offTrackSkinOriginalHeight;
-			this.onTrack.width = onTrackScaledWidth;
+			//var onTrackScaledWidth:Number = this.onTrackSkinOriginalWidth * this.actualHeight / this.onTrackSkinOriginalHeight;
+			//var offTrackScaledWidth:Number = this.offTrackSkinOriginalWidth * this.actualHeight / this.offTrackSkinOriginalHeight;
+			
+			//ON track 的寬度
+			//jxadded - track 寬要跟 toggleSwitch 寬一樣，縮放的事交給 textureScale 去處理
+			this.onTrack.width = actualWidth;
 			this.onTrack.height = this.actualHeight;
-			this.offTrack.width = offTrackScaledWidth;
+			
+			//OFF track 的寬度
+			this.offTrack.width = actualWidth;
 			this.offTrack.height = this.actualHeight;
 
-			var middleOfThumb:Number = this.thumb.x + this.thumb.width / 2;
+			//jxadded
+			var middleOfThumb:Number = thumb.width/2;
+			
+			//jxadded
 			this.onTrack.x = 0;
 			this.onTrack.y = 0;
+			
 			var currentScrollRect:Rectangle = this.onTrack.scrollRect;
 			if(!currentScrollRect)
 			{
 				currentScrollRect = new Rectangle();
 			}
-			currentScrollRect.x = 0;
+			//jxadded
+			currentScrollRect.x = onTrack.width - (thumb.x + thumb.width);
 			currentScrollRect.y = 0;
-			currentScrollRect.width = Math.min(onTrackScaledWidth, middleOfThumb);
+			//jxadded
+			currentScrollRect.width = thumb.x + middleOfThumb;
 			currentScrollRect.height = this.actualHeight;
 			this.onTrack.scrollRect = currentScrollRect;
-
-			this.offTrack.x = Math.max(this.actualWidth - offTrackScaledWidth, middleOfThumb);
+			
+			//--- off --------------------
+			
+			//jxadded
+			this.offTrack.x = Math.max( 0, thumb.x);
 			this.offTrack.y = 0;
+			
 			currentScrollRect = this.offTrack.scrollRect;
 			if(!currentScrollRect)
 			{
 				currentScrollRect = new Rectangle();
 			}
-			currentScrollRect.width = Math.min(offTrackScaledWidth, this.actualWidth - middleOfThumb);
+			
+			//jxadded
+			currentScrollRect.width = this.actualWidth - this.thumb.x;	
 			currentScrollRect.height = this.actualHeight;
-			currentScrollRect.x = Math.max(0, offTrackScaledWidth - currentScrollRect.width);
+//			currentScrollRect.x = this.thumb.x + middleOfThumb;
 			currentScrollRect.y = 0;
+			
 			this.offTrack.scrollRect = currentScrollRect;
+			
+//			trace("\non x: ", onTrack.scrollRect.x, " off w: ", onTrack.scrollRect.width );
+//			trace("off x: ", offTrack.scrollRect.x, " >w: ", offTrack.scrollRect.width );
 		}
 
 		/**
@@ -1481,10 +1602,15 @@ package feathers.controls
 				}
 				touch.getLocation(this, HELPER_POINT);
 				const trackScrollableWidth:Number = this.actualWidth - this._paddingLeft - this._paddingRight - this.thumb.width;
+				
+				//jxadded - 一開始移動，就讓兩個 track 都可識，將來鬆手後會隱藏不需要的
+				onTrack.visible = offTrack.visible = true;
+								
+				//jxnote: 移動 thumb
 				if(touch.phase == TouchPhase.MOVED)
 				{
 					const xOffset:Number = HELPER_POINT.x - this._touchStartX;
-					const xPosition:Number = Math.min(Math.max(this._paddingLeft, this._thumbStartX + xOffset), this._paddingLeft + trackScrollableWidth);
+					const xPosition:Number = Math.min( Math.max(this._paddingLeft, this._thumbStartX + xOffset), this._paddingLeft + trackScrollableWidth);
 					this.thumb.x = xPosition;
 					this.layout();
 					return;
@@ -1532,6 +1658,9 @@ package feathers.controls
 		private function selectionTween_onComplete(tween:GTween):void
 		{
 			this._selectionChangeTween = null;
+			
+			//jxadded
+			toggleTrackVisible();
 		}
 	}
 }

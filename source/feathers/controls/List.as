@@ -53,6 +53,57 @@ package feathers.controls
 	 */
 	public class List extends FeathersControl
 	{
+		
+		//---------------------------------------------------------------
+		//
+		// 測: 用遮蓋法做出圓角
+		
+		protected var _cornerAndShadowSkin:DisplayObject;
+		
+		public function set cornerAndShadowSkin( value:DisplayObject ):void
+		{
+			if(this._cornerAndShadowSkin == value)
+			{
+				return;
+			}
+			
+			if( this._cornerAndShadowSkin )
+			{
+				//this.removeChild(this._cornerAndShadowSkin);
+				_cornerAndShadowSkin.removeFromParent();
+			}
+			//
+			this._cornerAndShadowSkin = value;
+			this._cornerAndShadowSkin.touchable = false;	//不接受觸控反應
+			
+			if(this._cornerAndShadowSkin && this._cornerAndShadowSkin.parent != this)
+			{
+				//加到畫面上，將來到 draw() 時會確保它在最上層
+				this.addChildAt( _cornerAndShadowSkin, Math.max(0, numChildren-1) );
+			}
+			this.invalidate(INVALIDATION_FLAG_STYLES);
+		}
+		
+		public function get cornerAndShadowSkin():DisplayObject
+		{
+			return _cornerAndShadowSkin;
+		}
+		
+		/* 
+		下面這段貼到有需要的元件裏
+		//確保 cornerAndShadowSkin 在最上層
+		if( _cornerAndShadowSkin )
+		{
+		_cornerAndShadowSkin.width = actualWidth;
+		_cornerAndShadowSkin.height = actualHeight;
+		this.setChildIndex( _cornerAndShadowSkin, numChildren );
+		}
+		
+		*/
+		
+		// ↑ Sep 25, 2012
+		//---------------------------------------------------------------
+		
 		/**
 		 * @private
 		 */
@@ -994,6 +1045,18 @@ package feathers.controls
 			{
 				this.currentBackgroundSkin.width = this.actualWidth;
 				this.currentBackgroundSkin.height = this.actualHeight;
+			}
+			
+			//jxadded
+			if( sizeInvalid )
+			{
+				//確保 cornerAndShadowSkin 在最上層
+				if( _cornerAndShadowSkin )
+				{
+					_cornerAndShadowSkin.width = actualWidth;
+					_cornerAndShadowSkin.height = actualHeight;
+					this.setChildIndex( _cornerAndShadowSkin, numChildren );
+				}
 			}
 
 			this.scroller.validate();

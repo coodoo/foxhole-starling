@@ -36,6 +36,7 @@ package feathers.core
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
 	
+	import starling.core.RenderSupport;
 	import starling.display.DisplayObject;
 	import starling.events.Event;
 	import starling.utils.MatrixUtil;
@@ -65,6 +66,7 @@ package feathers.core
 		 */
 		public var onInitializedSignal:Signal = new Signal( FeathersControl );
 		
+		
 		//---------------------------------------------------------------
 		//
 		// 測: jx - percent width/height
@@ -74,6 +76,10 @@ package feathers.core
 		 *  Storage for the percentWidth property.
 		 */
 		private var _percentWidth:Number;
+		
+		protected var _actualHeight:Number = 0;
+		
+		protected var _actualWidth:Number = 0;
 		
 		/**
 		 * The final height value that should be used for layout. If the height
@@ -97,6 +103,7 @@ package feathers.core
 			
 			//jxadded: 確保 actualWidth/Height 是整數，不然 skin 可能會楜掉
 			//如果造成問題，就拿掉 Math.round();
+			//_actualHeight = value ;
 			_actualHeight = Math.round( value );
 		}
 
@@ -121,6 +128,7 @@ package feathers.core
 				return;
 			
 			//jxadded: 確保 actualWidth/Height 是整數，不然 skin 可能會楜掉
+			//_actualWidth = value;
 			_actualWidth = Math.round( value );
 		}
 
@@ -426,7 +434,7 @@ package feathers.core
 		 */
 		protected var explicitWidth:Number = NaN;
 
-		protected var _actualWidth:Number = 0;
+		
 
 		/**
 		 * The width of the component, in pixels. This could be a value that was
@@ -459,7 +467,7 @@ package feathers.core
 		 */
 		protected var explicitHeight:Number = NaN;
 
-		protected var _actualHeight:Number = 0;
+		
 
 		/**
 		 * The height of the component, in pixels. This could be a value that

@@ -25,6 +25,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 package feathers.core
 {
 	import flash.utils.Dictionary;
+	import flash.utils.describeType;
+	import flash.utils.getDefinitionByName;
+	import flash.utils.setTimeout;
+	
+	import avmplus.getQualifiedClassName;
+	import avmplus.getQualifiedSuperclassName;
 	
 	import starling.display.DisplayObject;
 	import starling.display.DisplayObjectContainer;
@@ -180,6 +186,7 @@ package feathers.core
 				}
 			}
 			type = Object(target).constructor;
+			
 			this.applyAllStylesForTypeFromMaps(target, type, this._noNameTypeMap, this._nameTypeMap);
 		}
 
@@ -188,6 +195,13 @@ package feathers.core
 		 */
 		protected function applyAllStylesForTypeFromMaps(target:DisplayObject, type:Class, map:Dictionary, nameMap:Dictionary = null):void
 		{
+//			if( target.hasOwnProperty("id") && target["id"] == "bang" )
+//			{
+//				trace( getQualifiedClassName( type ) );
+//				trace( getQualifiedSuperclassName(type ) );
+//				//trace(describeType( type ));
+//			}
+			
 			var initializer:Function;
 			if(nameMap)
 			{
@@ -197,6 +211,7 @@ package feathers.core
 					if(target is FeathersControl)
 					{
 						const uiControl:FeathersControl = FeathersControl(target);
+						var found:Boolean = false;//jx
 						for(var name:String in nameTable)
 						{
 							if(uiControl.nameList.contains(name))
@@ -205,18 +220,29 @@ package feathers.core
 								if(initializer != null)
 								{
 									initializer(target);
-									return;
+									//jx: 原本是只要找到一個就停止，現改為讓 for loop 跑完，為了支持 HGroup 身上有多種樣式
+									found = true;
+									//return;
+									
 								}
 							}
 						}
+						//jx: 如果是 named 樣式，就不要繼續跑到下面 nonName 的樣式去						
+						if( found )
+							return;
 					}
 				}
 			}
 
 			initializer = map[type] as Function;
+			
+			//
+//			if( target["id"] == "jxThumb" )
+//				trace( "" );
+			//trace("找到 type = ", type, " >> ", getQualifiedClassName(target) );
 			if(initializer != null)
 			{
-				initializer(target);
+				initializer(target);	//jxnote: 如果要查找最後真正執行的 initializer, 在這裏設斷點進去看
 			}
 		}
 
@@ -252,8 +278,8 @@ package feathers.core
 		protected function addedHandler(event:Event):void
 		{
 			//jx
-//			if( event.target.hasOwnProperty("id") && event.target["id"] == "FOOD" )
-//				trace( evt.target["id"] );
+//			if( event.target.hasOwnProperty("id") && event.target["id"] == "bang" )
+//				trace( event.target["id"] );
 			this.addObject(event.target as DisplayObject);
 		}
 	}
