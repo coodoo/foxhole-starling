@@ -765,9 +765,14 @@ package feathers.controls
 			}
 
 			sizeInvalid = this.autoSizeIfNeeded() || sizeInvalid;
+			
+			//jxadded - 設定 thumb 大小
+			if(sizeInvalid)
+				thumb.width = thumb.height = this.height * 3;
 
 			if(dataInvalid || stylesInvalid || sizeInvalid)
 			{
+				
 				this.layout();
 				
 				//jxadded

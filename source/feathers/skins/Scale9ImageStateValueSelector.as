@@ -39,9 +39,9 @@ package feathers.skins
 		 * 
 		 * jxadded: 加入支援 textureScale
 		 */
-		public function Scale9ImageStateValueSelector( tScale:Number = 1 )
+		public function Scale9ImageStateValueSelector( _textureScale:Number = 1 )
 		{
-			this.textureScale = tScale;
+			this.textureScale = _textureScale;
 		}
 		
 		/**

@@ -195,7 +195,7 @@ package feathers.core
 		 */
 		protected function applyAllStylesForTypeFromMaps(target:DisplayObject, type:Class, map:Dictionary, nameMap:Dictionary = null):void
 		{
-//			if( target.hasOwnProperty("id") && target["id"] == "bang" )
+//			if( target.hasOwnProperty("id") && target["id"] == "jxfoo" )
 //			{
 //				trace( getQualifiedClassName( type ) );
 //				trace( getQualifiedSuperclassName(type ) );
@@ -214,6 +214,7 @@ package feathers.core
 						var found:Boolean = false;//jx
 						for(var name:String in nameTable)
 						{
+							//trace("name = ", name );
 							if(uiControl.nameList.contains(name))
 							{
 								initializer = nameTable[name] as Function;
