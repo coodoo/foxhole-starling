@@ -137,11 +137,11 @@ package feathers.core
 		 */
 		protected static function popUp_removedFromStageHandler(event:Event):void
 		{
-			const popUp:DisplayObject = DisplayObject(event.currentTarget);
+			var popUp:DisplayObject = DisplayObject(event.currentTarget);
 			popUp.removeEventListener(Event.REMOVED_FROM_STAGE, popUp_removedFromStageHandler);
-			const index:int = popUps.indexOf(popUp);
+			var index:int = popUps.indexOf(popUp);
 			popUps.splice(index, 1);
-			const overlay:DisplayObject = DisplayObject(POPUP_TO_OVERLAY[popUp]);
+			var overlay:DisplayObject = DisplayObject(POPUP_TO_OVERLAY[popUp]);
 			if(overlay)
 			{
 				//this is a temporary workaround for Starling issue #131

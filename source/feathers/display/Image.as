@@ -112,23 +112,36 @@ package feathers.display
 //			var width:Number  = frame ? frame.width  : texture.width;
 //			var height:Number = frame ? frame.height : texture.height;
 			
+//			var frame:Rectangle = this.texture.frame;
+//			this.width = frame.width;
+//			this.height = frame.height;
+			
 			var frame:Rectangle = this.texture.frame;
 			this.width = frame ?  frame.width * this._textureScale : texture.width;
 			this.height = frame ? frame.height * this._textureScale : texture.height;
 			
+			/*
 			mVertexData.setPosition(0, 0.0, 0.0);
 			mVertexData.setPosition(1, width, 0.0);
 			mVertexData.setPosition(2, 0.0, height);
 			mVertexData.setPosition(3, width, height); 
 			
 			onVertexDataChanged();
+			*/
 		}
 
 		// ↑ Sep 22, 2012
 		//---------------------------------------------------------------
 		
 		
+		//jxadded
+		private var _width:Number;
 		
+		//jxadded
+		override public function get width():Number
+		{
+			return getBounds(this.parent, helperRectangle).width;
+		}
 		
 		/**
 		 * @private
@@ -136,17 +149,31 @@ package feathers.display
 		override public function set width(value:Number):void
 		{
 			var actualWidth:Number = super.getBounds(this, helperRectangle).width;
-			super.width = value;
+			
+			//jx: 這個也是我拿掉的，因為跑 super() 就會啟動 DisplayObject的 scaleX 計算，然後就破壞了我的比例
+			//super.width = value;
+			_width = value;
+			
 			//we need to override the default scaleX modification here because
 			//the "actual" width is modified by the scroll rect.
 			if(actualWidth != 0.0)
 			{
-				this.scaleX = value / actualWidth;
+				this.scaleX = value / actualWidth;	
+				//trace("改過的 scaleX = ", this.scaleX, value );
 			}
 			else
 			{
 				this.scaleX = 1.0;
 			}
+		}
+		
+		//jxadded
+		private var _height:Number;
+		
+		//jxadded
+		override public function get height():Number
+		{
+			return getBounds(this.parent, helperRectangle).height;
 		}
 
 		/**
@@ -155,9 +182,12 @@ package feathers.display
 		override public function set height(value:Number):void
 		{
 			var actualHeight:Number = super.getBounds(this, helperRectangle).height;
-			super.height = value;
+			
+			//jx: 不可跑 super, 會破壞 scaleY
+			//super.height = value;
 			if(actualHeight != 0.0)
 			{
+				//jx
 				this.scaleY = value / actualHeight;
 			}
 			else

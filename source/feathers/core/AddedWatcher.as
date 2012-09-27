@@ -24,6 +24,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 package feathers.core
 {
+	import com.pubulous.utils.Timing;
+	
 	import flash.utils.Dictionary;
 	import flash.utils.describeType;
 	import flash.utils.getDefinitionByName;
@@ -220,6 +222,7 @@ package feathers.core
 								initializer = nameTable[name] as Function;
 								if(initializer != null)
 								{
+									//trace("name = ", name );
 									initializer(target);
 									//jx: 原本是只要找到一個就停止，現改為讓 for loop 跑完，為了支持 HGroup 身上有多種樣式
 									found = true;
