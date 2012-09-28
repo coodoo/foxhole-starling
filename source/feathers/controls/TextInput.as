@@ -897,6 +897,7 @@ package feathers.controls
 				StageTextType = StageTextField;
 				initOptions = { multiline: false };
 			}
+			//jxnote: 這裏建立了 StageText 物件
 			this.stageText = new StageTextType(initOptions);
 			this.stageText.visible = false;
 			this.stageText.addEventListener(Event.CHANGE, stageText_changeHandler);

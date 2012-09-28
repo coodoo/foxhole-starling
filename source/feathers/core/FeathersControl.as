@@ -24,11 +24,10 @@
  */
 package feathers.core
 {
-	import com.pubulous.utils.GlobalUtil;
-	
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.system.Capabilities;
 	
 	import feathers.controls.text.BitmapFontTextRenderer;
 	import feathers.display.Sprite;
@@ -36,7 +35,6 @@ package feathers.core
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
 	
-	import starling.core.RenderSupport;
 	import starling.display.DisplayObject;
 	import starling.events.Event;
 	import starling.utils.MatrixUtil;
@@ -51,8 +49,9 @@ package feathers.core
 		/**
 		 * jxadded
 		 * 這參數太常用到，直接放到 root element 比較好
+		 * 但因為不想讓 Feathers 跟 GlobalUtil 產生相依，因此這裏重新計算
 		 */
-		public const dpiScale:Number = GlobalUtil.dpiScale();
+		public const dpiScale:Number = Math.min( Capabilities.screenDPI / 132, 3 );
 		
 		/**
 		 * jxadded

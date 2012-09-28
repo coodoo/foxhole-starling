@@ -47,6 +47,20 @@ package feathers.controls
 	 */
 	public class Button extends FeathersControl implements IToggle
 	{
+		//---------------------------------------------------------------
+		//
+		// 測: 
+		
+		//jxadded: 要人工切換按鈕狀態，但又不想改內建的 currentState，因此加這支
+		public function setCurrentState( value:String ):void
+		{
+			this.currentState = value;
+		}
+		
+		// ↑ Sep 28, 2012
+		//---------------------------------------------------------------
+		
+		
 		/**
 		 * @private
 		 */
