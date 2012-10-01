@@ -42,8 +42,10 @@ package feathers.controls.supportClasses
 	public class LayoutViewPort extends FeathersControl implements IViewPort
 	{
 		private static const helperPoint:Point = new Point();
-		private static const helperBounds:ViewPortBounds = new ViewPortBounds();
-		private static const helperResult:LayoutBoundsResult = new LayoutBoundsResult();
+		
+		//jx - 改成 public
+		public static const helperBounds:ViewPortBounds = new ViewPortBounds();
+		public static const helperResult:LayoutBoundsResult = new LayoutBoundsResult();
 
 		public function LayoutViewPort()
 		{

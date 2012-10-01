@@ -34,13 +34,14 @@ package feathers.controls
 	import feathers.motion.GTween;
 	import feathers.system.DeviceCapabilities;
 	
-	import org.osflash.signals.Signal;
 	import org.osflash.signals.ISignal;
+	import org.osflash.signals.Signal;
+	
 	import starling.display.DisplayObject;
-	import starling.events.TouchPhase;
 	import starling.events.Event;
-	import starling.events.TouchEvent;
 	import starling.events.Touch;
+	import starling.events.TouchEvent;
+	import starling.events.TouchPhase;
 
 	/**
 	 * Similar to a light switch. May be selected or not, like a check box.
@@ -127,7 +128,6 @@ package feathers.controls
 			super();
 			this.addEventListener(TouchEvent.TOUCH, touchHandler);
 			this.addEventListener(Event.REMOVED_FROM_STAGE, removedFromStageHandler);
-			
 		}
 
 		/**
@@ -1532,6 +1532,7 @@ package feathers.controls
 		 */
 		private function touchHandler(event:TouchEvent):void
 		{
+			
 			if(this._ignoreTapHandler)
 			{
 				this._ignoreTapHandler = false;
@@ -1564,6 +1565,16 @@ package feathers.controls
 
 			this._touchPointID = -1;
 			touch.getLocation(this, HELPER_POINT);
+
+//			trace("touch pt: ", HELPER_POINT.x, HELPER_POINT.y, " :: ", _hitArea.x, _hitArea.y );
+			//jxadded - track 的圖可能會超出邊界，造成滑鼠點在四週空白區也有反應，因此要判斷一下
+			if( !_hitArea.containsPoint( HELPER_POINT ) )
+			{
+				return;
+			}
+			
+			trace("\n\ntouchHandler: ", touch.phase );
+			
 			if(this.hitTest(HELPER_POINT, true))
 			{
 				this.isSelected = !this._isSelected;
@@ -1576,6 +1587,7 @@ package feathers.controls
 		 */
 		private function thumb_touchHandler(event:TouchEvent):void
 		{
+			
 			if(!this._isEnabled)
 			{
 				return;
@@ -1601,9 +1613,19 @@ package feathers.controls
 					return;
 				}
 				touch.getLocation(this, HELPER_POINT);
+				
+				//jxadded - track 的圖可能會超出邊界，造成滑鼠點在四週空白區也有反應，因此要判斷一下
+				if( !_hitArea.containsPoint( HELPER_POINT ) )
+				{
+					this._touchPointID = -1;
+					return;
+				}
+				
+				trace("thumb_touchHandler");
+				
 				const trackScrollableWidth:Number = this.actualWidth - this._paddingLeft - this._paddingRight - this.thumb.width;
 				
-				//jxadded - 一開始移動，就讓兩個 track 都可識，將來鬆手後會隱藏不需要的
+				//jxadded - 一開始移動，就讓兩個 track 都可視，將來鬆手後會隱藏不需要的
 				onTrack.visible = offTrack.visible = true;
 								
 				//jxnote: 移動 thumb
