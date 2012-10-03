@@ -76,7 +76,8 @@ package feathers.controls
 		/**
 		 * @private
 		 */
-		protected var scroller:Scroller;
+		//jxadded: 改成 public
+		public var scroller:Scroller;
 
 		/**
 		 * @private

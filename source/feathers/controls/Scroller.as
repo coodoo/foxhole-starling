@@ -41,6 +41,7 @@ package feathers.controls
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.utils.getTimer;
+	import flash.utils.setTimeout;
 	
 	import feathers.controls.supportClasses.IViewPort;
 	import feathers.core.FeathersControl;
@@ -286,6 +287,40 @@ package feathers.controls
 		 */
 		protected var verticalScrollBar:IScrollBar;
 
+		
+		/**
+		 * jxadded:
+		 * 讓 scrollbar 閃一下，提示該 container 可捲動，下面還有東西...
+		 */
+		public function flashScrollBar( showVertical:Boolean = true ):void
+		{
+			setTimeout( flashLater, 200, showVertical );
+		}
+		
+		/**
+		 * jxadded
+		 */
+		private function flashLater( showVertical ):void
+		{
+				//trace("show scrollbar", DisplayObject(this.verticalScrollBar).visible, DisplayObject(this.verticalScrollBar).alpha );
+				if( showVertical )
+				{
+					if( verticalScrollBar )
+					{
+						DisplayObject(this.verticalScrollBar).alpha = 1;
+						this.hideVerticalScrollBar(0.5);
+					}
+				}
+				else
+				{
+					if( horizontalScrollBar )
+					{
+						DisplayObject(this.horizontalScrollBar).alpha = 1;
+						this.hideHorizontalScrollBar(0.25);
+					}
+				}
+		}
+		
 		/**
 		 * @private
 		 */
@@ -2288,6 +2323,7 @@ package feathers.controls
 			{
 				return;
 			}
+			trace("\n\n--------hideVerticalScrollBar");
 			this._verticalScrollBarHideTween = new GTween(this.verticalScrollBar, this._hideScrollBarAnimationDuration,
 			{
 				alpha: 0
@@ -2514,6 +2550,7 @@ package feathers.controls
 				//we need to dispatch the signal that says we're starting.
 				if(!this._isDraggingVertically)
 				{
+					//jxnote: 手指拖拉畫面時這裏會廣播，將來或許有用
 					this._onDragStart.dispatch(this);
 				}
 				this._startTouchX = this._currentTouchX;
