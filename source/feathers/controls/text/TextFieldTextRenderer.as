@@ -394,7 +394,7 @@ package feathers.controls.text
 			var newWidth:Number = this.explicitWidth;
 			if(needsWidth)
 			{
-				//如果有明確指定 minWidth, maxWidth，它會考慮進去，不然就完全依 textField.width 為主
+				//如果有明確指定 minWidth, maxWidth，它會考慮進去，不然就完全依 textField.width 實際佔用寬度為主
 				newWidth = Math.max(this._minWidth, Math.min(this._maxWidth, this._textField.width));
 			}
 
@@ -424,7 +424,9 @@ package feathers.controls.text
 
 			if(sizeInvalid)
 			{
-				this._textField.width = this.actualWidth;	//前面 measure() 完叫 setSizeInternal() 後會設定 actualWidth
+				//前面 measure() 完叫 setSizeInternal() 後會設定此元件真正需要的寬度，即為 actualWidth
+				//這裏則是將剛才算好的 actualWidth 反套回文字身上
+				this._textField.width = this.actualWidth;	
 				this._textField.height = this.actualHeight;
 			}
 

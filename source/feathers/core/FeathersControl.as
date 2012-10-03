@@ -969,7 +969,6 @@ package feathers.core
 		 * jx: 某些 foxhole 元件(例如 TextfieldTextRenderer) 會自動判斷本身 w, h
 		 * 它內部量完後得到數據，就會操作這支來真正設定元件的 w, h，之後下列參數就會有值
 		 * width, height
-		 * explicitWidth, explicitHeight
 		 * actualWidth, actualHeight
 		 */
 		protected function setSizeInternal(width:Number, height:Number, canInvalidate:Boolean):Boolean

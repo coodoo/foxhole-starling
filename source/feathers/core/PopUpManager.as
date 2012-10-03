@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 package feathers.core
 {
 	import flash.utils.Dictionary;
-
+	
 	import starling.core.Starling;
 	import starling.display.DisplayObject;
 	import starling.display.Quad;
@@ -69,8 +69,10 @@ package feathers.core
 		
 		/**
 		 * Adds a pop-up to the stage.
+		 * 
+		 * jxadded: 加上 alpha 值方便控制
 		 */
-		public static function addPopUp(popUp:DisplayObject, isModal:Boolean = true, isCentered:Boolean = true, customOverlayFactory:Function = null):void
+		public static function addPopUp(popUp:DisplayObject, isModal:Boolean = true, isCentered:Boolean = true, customOverlayFactory:Function = null, alpha:Number=-1):void
 		{
 			const stage:Stage = Starling.current.stage;
 			if(isModal)
@@ -86,18 +88,47 @@ package feathers.core
 				const overlay:DisplayObject = customOverlayFactory();
 				overlay.width = stage.stageWidth;
 				overlay.height = stage.stageHeight;
+				
+				//jxadded
+				if( alpha != -1 )
+					overlay.alpha = alpha;
+				
 				stage.addChild(overlay);
 				POPUP_TO_OVERLAY[popUp] = overlay;
 			}
 
+			//jxadded-偵聽旋轉
+			stage.addEventListener( Event.RESIZE, resizeHandler );
+			
 			popUps.push(popUp);
 			stage.addChild(popUp);
 			popUp.addEventListener(Event.REMOVED_FROM_STAGE, popUp_removedFromStageHandler);
+			
 			
 			if(isCentered)
 			{
 				centerPopUp(popUp);
 			}
+		}
+		
+		/**
+		 * jxadded: popup 開啟時，如果旋轉裝置，要更新 overlay 與 popup 置中
+		 */
+		private static function resizeHandler( event:Event ):void
+		{
+			const stage:Stage = Starling.current.stage;
+			var popUp:DisplayObject = popUps[ popUps.length-1 ];
+			var overlay:DisplayObject = DisplayObject(POPUP_TO_OVERLAY[popUp]);
+			
+			//調整 overlay 大小
+			if(overlay)
+			{
+				overlay.width = stage.stageWidth;
+				overlay.height = stage.stageHeight;
+			}
+			
+			//重新置中 confirm
+			centerPopUp( popUp );
 		}
 		
 		/**
@@ -139,6 +170,10 @@ package feathers.core
 		{
 			var popUp:DisplayObject = DisplayObject(event.currentTarget);
 			popUp.removeEventListener(Event.REMOVED_FROM_STAGE, popUp_removedFromStageHandler);
+			
+			//jxadded
+			Starling.current.stage.removeEventListener( Event.RESIZE, resizeHandler );
+			
 			var index:int = popUps.indexOf(popUp);
 			popUps.splice(index, 1);
 			var overlay:DisplayObject = DisplayObject(POPUP_TO_OVERLAY[popUp]);
