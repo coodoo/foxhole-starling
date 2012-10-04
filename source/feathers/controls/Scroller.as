@@ -1265,21 +1265,43 @@ package feathers.controls
 		}
 		
 		/**
+		 * jxadded: 詢問是否正在進行 h tween
+		 */
+		public function isHScrolling():Boolean
+		{
+			return (_horizontalAutoScrollTween && _horizontalAutoScrollTween.paused == false);
+			//return this._horizontalAutoScrollTween != null;
+		}
+		
+		/**
 		 * Throws the scroller to the specified position. If you want to throw
 		 * in one direction, pass in NaN or the current scroll position for the
 		 * value that you do not want to change.
 		 */
-		public function throwTo(targetHorizontalScrollPosition:Number = NaN, targetVerticalScrollPosition:Number = NaN, duration:Number = 0.5):void
+		public function throwTo(targetHorizontalScrollPosition:Number = NaN, targetVerticalScrollPosition:Number = NaN, duration:Number = 0.5, from:String=""):void
 		{
+			trace("\t inside: ", targetHorizontalScrollPosition, " < ", from );
+
 			if(!isNaN(targetHorizontalScrollPosition))
 			{
 				if(this._horizontalAutoScrollTween)
 				{
+					trace("\t",  1, from );
+					
+					//DEBUG
+					horizontalScrollPosition = _horizontalAutoScrollTween.getValue("horizontalScrollPosition");	
+					
 					this._horizontalAutoScrollTween.paused = true;
 					this._horizontalAutoScrollTween = null;
 				}
 				if(this._horizontalScrollPosition != targetHorizontalScrollPosition)
 				{
+					trace("\t",  2, from );
+					
+					//jx-debug 這裏才記錄原本想去的整頁位置
+//					if( _snapToPages )
+//						oldTargetH = targetHorizontalScrollPosition;
+					
 					this._horizontalAutoScrollTween = new GTween(this, duration,
 					{
 						horizontalScrollPosition: targetHorizontalScrollPosition
@@ -1292,11 +1314,13 @@ package feathers.controls
 				}
 				else
 				{
+					trace("\t3");
 					this.finishScrollingHorizontally();
 				}
 			}
 			else
 			{
+				trace("\t\t4");
 				this.hideHorizontalScrollBar();
 			}
 			
@@ -1318,6 +1342,7 @@ package feathers.controls
 						onComplete: verticalAutoScrollTween_onComplete
 					});
 					this._verticalAutoScrollTween.init();
+					trace("\t scroller tween 真的跑");
 				}
 				else
 				{
@@ -2061,7 +2086,7 @@ package feathers.controls
 			this._isDraggingHorizontally = false;
 			
 			//jxnote: 最後跑這句只是為了觸發 hideHorizontalScrollBar() 將 scrollBar 藏起來，因為它傳出去的值是 NaN
-			this.throwTo(targetHorizontalScrollPosition, NaN, this._elasticSnapDuration);
+			this.throwTo(targetHorizontalScrollPosition, NaN, this._elasticSnapDuration, "dummy");
 		}
 		
 		/**
@@ -2100,20 +2125,13 @@ package feathers.controls
 				
 				//並且跳到原先指定位置
 				_horizontalScrollPosition = _horizontalAutoScrollTween.getValue( "horizontalScrollPosition");
-				//trace("\tstopTweening::跳到預定位置 = ", _horizontalScrollPosition );
+				trace("\tstopTweening::跳到預定位置 = ", _horizontalScrollPosition );
 				
 				//清掉動畫
 				_horizontalAutoScrollTween = null;
 			}
 		}
 		
-		/**
-		 * jxadded: 詢問是否正在進行 h tween
-		 */
-		public function isHScrolling():Boolean
-		{
-			return (_horizontalAutoScrollTween && _horizontalAutoScrollTween.paused == false);
-		}
 		
 		//jxadded
 		//oldHSP, newHSP
@@ -2323,7 +2341,6 @@ package feathers.controls
 			{
 				return;
 			}
-			trace("\n\n--------hideVerticalScrollBar");
 			this._verticalScrollBarHideTween = new GTween(this.verticalScrollBar, this._hideScrollBarAnimationDuration,
 			{
 				alpha: 0
@@ -2453,7 +2470,7 @@ package feathers.controls
 			touch.getLocation(this, helperPoint);
 			if(this._horizontalAutoScrollTween)
 			{
-				//jx: 如果是 snapToPages，一定要讓它跑完
+				//jx: 如果是 snapToPages，先保存它原本預定位置，將來會讓它跑完
 				if( _snapToPages )
 				{
 					//trace("整頁翻要停止，先跳到原本預定位置: ",_horizontalAutoScrollTween.getValue("horizontalScrollPosition") ); 						
@@ -2466,6 +2483,7 @@ package feathers.controls
 					else
 						oldTargetH = -1;
 				}
+				
 				this._horizontalAutoScrollTween.paused = true;
 				this._horizontalAutoScrollTween = null
 			}
@@ -2489,6 +2507,8 @@ package feathers.controls
 			this._isDraggingVertically = false;
 			this._isScrollingStopped = false;
 
+			//jxnote:  注意 - 一切操控都是由 touchHandler() 也就是手指按下後才啟動
+			//它連帶開啟了 enterFrameHandler() 與 下面的 stage_touchHandler()
 			this.addEventListener(Event.ENTER_FRAME, enterFrameHandler);
 			
 			//we need to listen on the stage because if we scroll the bottom or
@@ -2639,7 +2659,9 @@ package feathers.controls
 				//TODO: 這裏只解決了 h 捲動時的快速連點兩下，將來要解決垂直捲動的情況 - 可加個 oldTargetV 即可
 				if(oldTargetH != -1 )
 				{
-					throwTo(oldTargetH);	//繼續用 throwTo 讓動畫流暢跑完
+					trace("兩連發，自動補完上次位置");
+					//throwTo(oldTargetH);	//繼續用 throwTo 讓動畫流暢跑完
+					horizontalScrollPosition = oldTargetH;
 					oldTargetH = -1;					
 				}
 
@@ -2666,6 +2688,7 @@ package feathers.controls
 				if(!isFinishingHorizontally && this._isDraggingHorizontally)
 				{
 					//trace("自然捲");
+					
 					//take the average for more accuracy
 					var sum:Number = this._velocityX * 2.33;
 					var velocityCount:int = this._previousVelocityX.length;

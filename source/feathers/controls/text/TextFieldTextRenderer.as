@@ -24,11 +24,14 @@
  */
 package feathers.controls.text
 {
+	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display3D.textures.Texture;
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
+	import flash.text.AntiAliasType;
+	import flash.text.GridFitType;
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
@@ -42,6 +45,7 @@ package feathers.controls.text
 	import starling.events.Event;
 	import starling.textures.ConcreteTexture;
 	import starling.textures.Texture;
+	import starling.textures.TextureSmoothing;
 
 	/**
 	 * Renders text with a native <code>flash.text.TextField</code>.
@@ -367,10 +371,19 @@ package feathers.controls.text
 				this._textField.embedFonts = this._embedFonts;
 				if(this._textFormat)
 				{
+					//jx-DEBUG
+//					_textFormat.size = Number(_textFormat.size)*fontScale;
+//					_textField.antiAliasType = AntiAliasType.ADVANCED;
+//					_textField.gridFitType = GridFitType.SUBPIXEL;
+//					_textField.sharpness = 400;
+					//---------------------
 					this._textField.setTextFormat(this._textFormat);	//也要放入新的 textFormat
 				}
 			}
 		}
+		
+		//jx
+		private var fontScale:Number = 2;
 
 		/**
 		 * @private
@@ -490,11 +503,25 @@ package feathers.controls.text
 			helperMatrix.identity();
 			helperMatrix.scale(Starling.contentScaleFactor, Starling.contentScaleFactor);
 			this._textSnapshotBitmapData.fillRect(this._textSnapshotBitmapData.rect, 0x00ff00ff);
+			
+			//jx-DEBUG
+//			helperMatrix.scale( 1/fontScale, 1/fontScale );
+			
 			this._textSnapshotBitmapData.draw(this._textField, helperMatrix);
+			
 			if(!this._textSnapshot)
 			{
+				//jx: 將材質縮為 1/4
+				//this._textSnapshot = new Image(starling.textures.Texture.fromBitmapData(this._textSnapshotBitmapData, false, false, fontScale ));
 				this._textSnapshot = new Image(starling.textures.Texture.fromBitmapData(this._textSnapshotBitmapData, false, false, Starling.contentScaleFactor));
+				//_textSnapshot.smoothing = TextureSmoothing.NONE; 
 				this.addChild(this._textSnapshot);
+				
+				//jx-DEBUG
+//				var bitmap:Bitmap = new flash.display.Bitmap(_textSnapshotBitmapData);
+//				bitmap.smoothing = true;
+//				bitmap.scaleX = bitmap.scaleY = 1/fontScale;
+//				Starling.current.nativeStage.addChild( bitmap );
 			}
 			else
 			{
