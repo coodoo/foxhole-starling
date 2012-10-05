@@ -1280,15 +1280,15 @@ package feathers.controls
 		 */
 		public function throwTo(targetHorizontalScrollPosition:Number = NaN, targetVerticalScrollPosition:Number = NaN, duration:Number = 0.5, from:String=""):void
 		{
-			trace("\t inside: ", targetHorizontalScrollPosition, " < ", from );
+//			trace("\t inside: ", targetHorizontalScrollPosition, " < ", from );
 
 			if(!isNaN(targetHorizontalScrollPosition))
 			{
 				if(this._horizontalAutoScrollTween)
 				{
-					trace("\t",  1, from );
+//					trace("\t",  1, from );
 					
-					//DEBUG
+					//jxadded: 快速手指點選翻頁時，要讓前次點的操作先翻頁到位，不然後面的點選會取消前次的點選，就永遠不會翻頁了
 					horizontalScrollPosition = _horizontalAutoScrollTween.getValue("horizontalScrollPosition");	
 					
 					this._horizontalAutoScrollTween.paused = true;
@@ -1296,7 +1296,7 @@ package feathers.controls
 				}
 				if(this._horizontalScrollPosition != targetHorizontalScrollPosition)
 				{
-					trace("\t",  2, from );
+//					trace("\t",  2, from );
 					
 					//jx-debug 這裏才記錄原本想去的整頁位置
 //					if( _snapToPages )
@@ -1314,13 +1314,11 @@ package feathers.controls
 				}
 				else
 				{
-					trace("\t3");
 					this.finishScrollingHorizontally();
 				}
 			}
 			else
 			{
-				trace("\t\t4");
 				this.hideHorizontalScrollBar();
 			}
 			
@@ -1342,7 +1340,6 @@ package feathers.controls
 						onComplete: verticalAutoScrollTween_onComplete
 					});
 					this._verticalAutoScrollTween.init();
-					trace("\t scroller tween 真的跑");
 				}
 				else
 				{
@@ -2659,7 +2656,7 @@ package feathers.controls
 				//TODO: 這裏只解決了 h 捲動時的快速連點兩下，將來要解決垂直捲動的情況 - 可加個 oldTargetV 即可
 				if(oldTargetH != -1 )
 				{
-					trace("兩連發，自動補完上次位置");
+					//trace("兩連發，自動補完上次位置");
 					//throwTo(oldTargetH);	//繼續用 throwTo 讓動畫流暢跑完
 					horizontalScrollPosition = oldTargetH;
 					oldTargetH = -1;					
