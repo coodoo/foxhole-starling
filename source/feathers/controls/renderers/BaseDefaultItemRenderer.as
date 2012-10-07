@@ -886,6 +886,7 @@ package feathers.controls.renderers
 				return;
 			}
 			this._accessoryLabelFactory = value;
+			trace("style 變 1");
 			this.invalidate(INVALIDATION_FLAG_STYLES);
 		}
 
@@ -947,6 +948,7 @@ package feathers.controls.renderers
 			{
 				this._accessoryLabelProperties.onChange.add(accessoryLabelProperties_onChange);
 			}
+			trace("style 變 2 - accessory");
 			this.invalidate(INVALIDATION_FLAG_STYLES);
 		}
 

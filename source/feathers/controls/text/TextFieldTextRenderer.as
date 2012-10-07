@@ -24,9 +24,14 @@
  */
 package feathers.controls.text
 {
+	import com.pubulous.utils.GlobalUtil;
+	import com.pubulous.utils.Timing;
+	
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
+	import flash.display.StageQuality;
 	import flash.display3D.textures.Texture;
+	import flash.filters.BlurFilter;
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -372,9 +377,9 @@ package feathers.controls.text
 				if(this._textFormat)
 				{
 					//jx-DEBUG
-//					_textFormat.size = Number(_textFormat.size)*fontScale;
+					_textFormat.size = Number(_textFormat.size)*fontScale;
 //					_textField.antiAliasType = AntiAliasType.ADVANCED;
-//					_textField.gridFitType = GridFitType.SUBPIXEL;
+//					_textField.gridFitType = GridFitType.PIXEL;
 //					_textField.sharpness = 400;
 					//---------------------
 					this._textField.setTextFormat(this._textFormat);	//也要放入新的 textFormat
@@ -383,7 +388,7 @@ package feathers.controls.text
 		}
 		
 		//jx
-		private var fontScale:Number = 2;
+		private var fontScale:Number = 1;
 
 		/**
 		 * @private
@@ -474,6 +479,15 @@ package feathers.controls.text
 		}
 
 		/**
+		 * 最新：用一點點 blur 希望讓文字線條變清楚，通常只用在 non-retina display 上
+		 * 但注意它是對全圖做 blur 效果，可能很貴。
+		 */
+		public static const blurText:Boolean = !GlobalUtil.isRetinaDisplay();
+		
+		//1.5 是目前抓出來比較好的值，讓筆畫變粗，但又不會太楜
+		public static const blurLevel:Number = 1.15;
+		
+		/**
 		 * @private
 		 */
 		protected function refreshSnapshot(needsNewBitmap:Boolean):void
@@ -507,14 +521,57 @@ package feathers.controls.text
 			//jx-DEBUG
 //			helperMatrix.scale( 1/fontScale, 1/fontScale );
 			
-			this._textSnapshotBitmapData.draw(this._textField, helperMatrix);
+			//DEBUG - 反正要加 filter, draw()時就不用開 smoothing 了
+//			this._textSnapshotBitmapData.draw(this._textField, helperMatrix );
+			
+			//this._textSnapshotBitmapData.draw(this._textField, helperMatrix, null, null, null, true );
+			
+			this._textSnapshotBitmapData.drawWithQuality( _textField, helperMatrix, null, null, null, true, StageQuality.HIGH );
+			
+			//★套用 filter 讓文字線條清楚一點
+			if( blurText )
+			{
+//				Timing.getInstance().start("filter");
+				_textSnapshotBitmapData.applyFilter( _textSnapshotBitmapData, _textSnapshotBitmapData.rect, new Point(), new BlurFilter(blurLevel, blurLevel) );
+//				Timing.getInstance().end("filter");
+			}
+
+			//DEBUG - 第二輪重繪，縮小一半
+			
+			//DEBUG: 先建 bitmap, 好設定 smoothing = true
+//			var bitmap:Bitmap = new Bitmap( _textSnapshotBitmapData, "always", true );
+//			
+//			var m:Matrix = new Matrix( 0.5, 0, 0, 0.5 );
+//			bitmap.transform.matrix = m;	//縮放 bitmap，讓它內部去做 smoothing 處理
+			
+//			var bd:BitmapData = new BitmapData( tfWidth, tfHeight, true, 0 );
+			
+//			bd.drawWithQuality( bitmap, new Matrix( 1, 0, 0, 1 ), null, null, null, true, StageQuality.HIGH );
+//			bd.drawWithQuality( _textSnapshotBitmapData, new Matrix( 0.5, 0, 0, 0.5 ), null, null, null, true, StageQuality.HIGH );
+//			bd.drawWithQuality( bitmap.bitmapData, new Matrix( 1, 0, 0, 1 ), null, null, null, true, StageQuality.HIGH );
+
+//			bitmap.bitmapData = bd;
+			
+//			bd = _textSnapshotBitmapData;
+			
+//			_textSnapshotBitmapData = bd;
+			
+//			bd = new BitmapData( tfWidth, tfHeight, true, 0 );
+//			bd.drawWithQuality( _textSnapshotBitmapData, new Matrix( 0.5, 0, 0, 0.5), null, null, null, true, StageQuality.HIGH );
+			
 			
 			if(!this._textSnapshot)
 			{
 				//jx: 將材質縮為 1/4
 				//this._textSnapshot = new Image(starling.textures.Texture.fromBitmapData(this._textSnapshotBitmapData, false, false, fontScale ));
-				this._textSnapshot = new Image(starling.textures.Texture.fromBitmapData(this._textSnapshotBitmapData, false, false, Starling.contentScaleFactor));
-				//_textSnapshot.smoothing = TextureSmoothing.NONE; 
+				//this._textSnapshot = new Image(starling.textures.Texture.fromBitmapData(this._textSnapshotBitmapData, false, false, Starling.contentScaleFactor));
+				
+				
+//				this._textSnapshot = new Image( starling.textures.Texture.fromBitmap( bitmap, false, false, 1 ) );
+				this._textSnapshot = new Image(starling.textures.Texture.fromBitmapData( _textSnapshotBitmapData, false, false, Starling.contentScaleFactor));
+				
+				//trace("Starling.contentScaleFactor= ", Starling.contentScaleFactor);
+				//_textSnapshot.smoothing = TextureSmoothing.BILINEAR; 
 				this.addChild(this._textSnapshot);
 				
 				//jx-DEBUG
