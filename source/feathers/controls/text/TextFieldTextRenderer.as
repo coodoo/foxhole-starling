@@ -27,16 +27,12 @@ package feathers.controls.text
 	import com.pubulous.utils.GlobalUtil;
 	import com.pubulous.utils.Timing;
 	
-	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.StageQuality;
 	import flash.display3D.textures.Texture;
-	import flash.filters.BlurFilter;
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
-	import flash.text.AntiAliasType;
-	import flash.text.GridFitType;
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
@@ -50,7 +46,6 @@ package feathers.controls.text
 	import starling.events.Event;
 	import starling.textures.ConcreteTexture;
 	import starling.textures.Texture;
-	import starling.textures.TextureSmoothing;
 
 	/**
 	 * Renders text with a native <code>flash.text.TextField</code>.
@@ -506,7 +501,8 @@ package feathers.controls.text
 					{
 						this._textSnapshotBitmapData.dispose();
 					}
-					this._textSnapshotBitmapData = new BitmapData(tfWidth, tfHeight, true, 0x00ff00ff);
+//					this._textSnapshotBitmapData = new BitmapData(tfWidth, tfHeight, false, 0x00ff00ff);//不透明，粉紅色底
+					this._textSnapshotBitmapData = new BitmapData(tfWidth, tfHeight, true, 0x00FF00FF );
 				}
 			}
 
@@ -516,7 +512,8 @@ package feathers.controls.text
 			}
 			helperMatrix.identity();
 			helperMatrix.scale(Starling.contentScaleFactor, Starling.contentScaleFactor);
-			this._textSnapshotBitmapData.fillRect(this._textSnapshotBitmapData.rect, 0x00ff00ff);
+			this._textSnapshotBitmapData.fillRect(this._textSnapshotBitmapData.rect, 0x00FFFFFF);	//00 透明; FF 不透明
+//			this._textSnapshotBitmapData.fillRect(this._textSnapshotBitmapData.rect, 0x00ff00ff);
 			
 			//jx-DEBUG
 //			helperMatrix.scale( 1/fontScale, 1/fontScale );
@@ -528,12 +525,13 @@ package feathers.controls.text
 			
 			this._textSnapshotBitmapData.drawWithQuality( _textField, helperMatrix, null, null, null, true, StageQuality.HIGH );
 			
+			//DEBUG: 暫時關掉 filter
 			//★套用 filter 讓文字線條清楚一點
 			if( blurText )
 			{
-//				Timing.getInstance().start("filter");
-				_textSnapshotBitmapData.applyFilter( _textSnapshotBitmapData, _textSnapshotBitmapData.rect, new Point(), new BlurFilter(blurLevel, blurLevel) );
-//				Timing.getInstance().end("filter");
+				//Timing.getInstance().start("filter");
+				_textSnapshotBitmapData.applyFilter( _textSnapshotBitmapData, _textSnapshotBitmapData.rect, new Point(), GlobalUtil.glow );
+				//Timing.getInstance().end("filter");
 			}
 
 			//DEBUG - 第二輪重繪，縮小一半
