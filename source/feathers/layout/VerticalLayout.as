@@ -25,10 +25,10 @@
 package feathers.layout
 {
 	import flash.geom.Point;
-
+	
 	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
-
+	
 	import starling.display.DisplayObject;
 
 	/**
@@ -697,6 +697,8 @@ package feathers.layout
 				result = new Point();
 			}
 
+			var positionY:Number;
+			var i:int;
 			result.x = 0;
 			if(!this._hasVariableItemDimensions)
 			{
@@ -704,8 +706,8 @@ package feathers.layout
 			}
 			else
 			{
-				var positionY:Number = this._paddingTop;
-				for(var i:int = 0; i < index; i++)
+				positionY = this._paddingTop;
+				for( i = 0; i < index; i++)
 				{
 					if(isNaN(this._heightCache[i]))
 					{
@@ -719,9 +721,10 @@ package feathers.layout
 				}
 				result.y = positionY - (height - itemHeight) / 2;
 			}
-			var positionY:Number = y + this._paddingTop;
+			positionY = y + this._paddingTop;
 			var lastHeight:Number = 0;
-			for(var i:int = 0; i <= index; i++)
+			
+			for(i = 0; i <= index; i++)
 			{
 				var item:DisplayObject = items[i];
 				if(this._useVirtualLayout && !item)

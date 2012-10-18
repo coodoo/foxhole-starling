@@ -25,7 +25,6 @@
 package feathers.controls.text
 {
 	import com.pubulous.utils.GlobalUtil;
-	import com.pubulous.utils.Timing;
 	
 	import flash.display.BitmapData;
 	import flash.display.StageQuality;
@@ -625,5 +624,7 @@ package feathers.controls.text
 				this._textSnapshot = null;
 			}
 		}
+		
+		
 	}
 }

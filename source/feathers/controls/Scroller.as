@@ -2121,8 +2121,12 @@ package feathers.controls
 				_horizontalAutoScrollTween.paused = true;
 				
 				//並且跳到原先指定位置
-				_horizontalScrollPosition = _horizontalAutoScrollTween.getValue( "horizontalScrollPosition");
-				trace("\tstopTweening::跳到預定位置 = ", _horizontalScrollPosition );
+				var value:Number = _horizontalAutoScrollTween.getValue( "horizontalScrollPosition");
+				if( value >= 0 )
+				{
+					_horizontalScrollPosition = value;
+					trace("\tstopTweening::跳到預定位置 = ", _horizontalScrollPosition );
+				}
 				
 				//清掉動畫
 				_horizontalAutoScrollTween = null;
