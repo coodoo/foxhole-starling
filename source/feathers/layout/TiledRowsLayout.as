@@ -171,6 +171,30 @@ package feathers.layout
 			this._gap = value;
 			this._onLayoutChange.dispatch(this);
 		}
+		
+		//jxadded: 將 h 與 v gap 分開設定
+		public var _vGap:Number = 0;
+		
+		/**
+		 * The space, in pixels, between tiles.
+		 */
+		public function get vGap():Number
+		{
+			return this._vGap;
+		}
+		
+		/**
+		 * @private
+		 */
+		public function set vGap(value:Number):void
+		{
+			if(this._vGap == value)
+			{
+				return;
+			}
+			this._vGap = value;
+			this._onLayoutChange.dispatch(this);
+		}
 
 		/**
 		 * @private
@@ -591,7 +615,7 @@ package feathers.layout
 			}
 
 			const totalPageWidth:Number = horizontalTileCount * (tileWidth + this._gap) - this._gap + this._paddingLeft + this._paddingRight;
-			const totalPageHeight:Number = verticalTileCount * (tileHeight + this._gap) - this._gap + this._paddingTop + this._paddingBottom;
+			const totalPageHeight:Number = verticalTileCount * (tileHeight + this.vGap) - this.vGap + this._paddingTop + this._paddingBottom;
 			const availablePageWidth:Number = isNaN(availableWidth) ? totalPageWidth : availableWidth;
 			const availablePageHeight:Number = isNaN(availableHeight) ? totalPageHeight : availableHeight;
 
@@ -610,7 +634,9 @@ package feathers.layout
 				if(i != 0 && i % horizontalTileCount == 0)
 				{
 					positionX = pageStartX;
-					positionY += tileHeight + this._gap;
+					//jxadded: 加上 vGap 值
+					positionY += tileHeight + this.vGap;
+//					positionY += tileHeight + this._gap;
 				}
 				if(i == nextPageStartIndex)
 				{
